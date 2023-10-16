@@ -1,0 +1,148 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@model LongQin.Models.Menu
+
+@{
+    ViewBag.Title = Model.MenuId == 0 ? "添加菜单" : "编辑菜单";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/System/Menu/Index">菜单管理</a>
+        <a><cite>@ViewBag.Title</cite></a>
+    </span>
+</blockquote>
+<form class="layui-form" id="mainForm" method="post" action="/System/Menu/Set" lay-filter="mainform">
+    @Html.HiddenFor(m => m.MenuId)
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span style="color:red">*</span>菜单名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="MenuName" value="@Model.MenuName" lay-verify="required|max" lay-reqtext="请填写菜单名称" lay-max="25" lay-pretext="菜单名称" placeholder="请填写菜单名称" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">上级菜单</label>
+        <div class="layui-input-block">
+            <input type="text" name="ParentId" value="@Model.ParentId" id="ParentId" lay-filter="ParentId" class="layui-input" />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">菜单路径</label>
+        <div class="layui-input-block">
+            <input type="text" name="MenuUrl" value="@Model.MenuUrl" lay-verify="max" lay-max="100" lay-pretext="菜单路径" placeholder="请填写菜单路径" autocomplete="off" class="layui-input" />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">控制器名</label>
+        <div class="layui-input-block">
+            <input type="text" name="Controller" value="@Model.Controller" lay-verify="max" lay-max="50" lay-pretext="控制器名" placeholder="请填写控制器名" autocomplete="off" class="layui-input" />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">方法名</label>
+        <div class="layui-input-block">
+            <input type="text" name="Action" value="@Model.Action" lay-verify="max" lay-max="50" lay-pretext="方法名" placeholder="请填写方法名" autocomplete="off" class="layui-input" />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">排序</label>
+        <div class="layui-input-block">
+            <input type="text" name="GroupSeq" value="@Model.GroupSeq" id="GroupSeq" class="layui-input" />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">菜单图标</label>
+        <div class="layui-input-block">
+            <input type="text" name="MenuIcon" value="@Model.MenuIcon" lay-verify="max" lay-max="50" lay-pretext="菜单图标" placeholder="请填写菜单图标" autocomplete="off" class="layui-input" />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button type="submit" class="layui-btn" lay-submit="" lay-filter="submitBtn">立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+</form>
+
+@section Bottom{
+    <script>
+        layui.use(['form', 'treeSelect', 'tree', 'numberInput'], function () {
+        var form = layui.form
+        , $ = layui.jquery, layer = layui.layer;
+        var tree = layui.tree;
+        var treeSelect = layui.treeSelect;
+        var numberInput = layui.numberInput;
+        numberInput.init("#GroupSeq");
+
+        //自定义验证规则
+        form.verify({
+            max: function (value, item) {
+                var maxLen = item.getAttribute('lay-max');
+                var pretext = item.getAttribute('lay-pretext');
+                if (value.length > maxLen) {
+                    return pretext + '不能大于' + maxLen + '个字符的长度';
+                }
+            }
+        });
+
+        //监听提交
+        form.on('submit(submitBtn)', function (data) {
+            $("#mainForm").ajaxSubmit({
+                success: function (slt) {
+                    if (slt && slt.success) {
+                        location.href = '@Url.Action("index", "menu", new { area="system"})';
+                    }
+                    else {
+                        layer.msg(slt.message || '操作失败，请重试。');
+                    }
+                }
+                });
+                return false;
+            });
+
+            //上级菜单
+            treeSelect.render({
+                // 选择器
+                elem: '#ParentId',
+                // 异步获取下拉树需要显示的数据
+                data: '@Url.Action("GetMenuTree", "Menu", new { area = "System" })' + '?id=' + $("#MenuId").val(),
+                // 异步加载方式：get/post，默认get
+                type: 'post',
+                // 占位符
+                placeholder: '请选择上级菜单',
+                // 是否开启搜索功能：true/false，默认false
+                search: true,
+                // 一些可定制的样式
+                style: {
+                    folder: {
+                        enable: true
+                    },
+                    line: {
+                        enable: true
+                    }
+                },
+                // 点击节点回调
+                click: function (d) {
+                    form.val('mainform', {
+                        "ParentId": d.current.id
+                    });
+                },
+                // 加载完成后的回调函数
+                success: function (d) {
+                    //console.log(d);
+                    // 选中节点，根据id筛选，一般修改时会有默认选中状态，可以在这里设置
+                    if ($("#ParentId").val() != '0') {
+                        treeSelect.checkNode('ParentId', $("#ParentId").val());
+                    }
+                    //console.log($('#tree').val());
+                    // 获取zTree对象，可以调用zTree方法
+                    //var treeObj = treeSelect.zTree('tree');
+                    // console.log(treeObj);
+                    // 刷新树结构
+                    //treeSelect.refresh('tree');
+                }
+            });
+        });
+    </script>
+}
+

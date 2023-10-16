@@ -1,0 +1,88 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@model LongQin.Models.Notice
+
+@{
+    ViewBag.Title = "公告详情";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/System/Notice/Index">公告管理</a>
+        <a><cite>@ViewBag.Title</cite></a>
+    </span>
+</blockquote>
+<form class="layui-form" id="mainForm" lay-filter="mainform">
+    <div class="layui-form-item">
+        <label class="layui-form-label">标题</label>
+        <div class="layui-input-block">
+            <input type="text" name="Title" value="@Model.Title" class="layui-input" readonly="readonly" />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">内容</label>
+        <div class="layui-input-block">
+            <textarea id="Content" name="Content" class="layui-hide editorsrv">@Model.Content</textarea>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">紧急程度</label>
+        <div class="layui-input-block">
+            <select name="NoticeLevel" id="NoticeLevel" readonly="readonly">
+                <option value="">请选择紧急程度</option>
+                <option value="1">普通</option>
+                <option value="2">紧急</option>
+                <option value="3">加急</option>
+            </select>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">保密等级</label>
+        <div class="layui-input-block">
+            <select name="Security" id="Security" readonly="readonly">
+                <option value="">请选择保密等级</option>
+                <option value="1">公开</option>
+                <option value="2">内部公开</option>
+                <option value="3">机密</option>
+            </select>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">附件</label>
+        <div class="layui-input-block" id="attachments">
+        </div>
+    </div>
+</form>
+
+@section Bottom{
+    <script src="~/Content/formdesigner/tinymce/tinymce.min.js"></script>
+    <script>
+        layui.use(['form'], function () {
+            var form = layui.form
+                , $ = layui.jquery;
+
+            $("#NoticeLevel").val("@Model.NoticeLevel");
+            $("#Security").val("@Model.Security");
+            form.render('select');
+
+            tinymce.init({
+                selector: '#Content',
+                language: 'zh_CN',
+                readonly: true
+            })
+
+            var attachements = "@Model.Attachments";
+            if (attachements) {
+                var files = attachements.split(',');
+                var content = '';
+                for (var i = 0; i < files.length; i++) {
+                    var fileName = files[i].substring(files[i].lastIndexOf('/') + 1);
+                    content += '<a href="' + files[i] + '" >' + fileName + '</a></br>';
+                }
+                $('#attachments').html(content);
+            }
+        });
+
+    </script>
+}
+

@@ -1,0 +1,232 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@{
+    ViewBag.Title = "工作处理";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/Work/WorkFlow/Backlog">待办工作</a>
+        <a><cite>@ViewBag.Title</cite></a>
+    </span>
+</blockquote>
+<div class="layui-fluid" id="history">
+    <form class="layui-form" id="historyForm"></form>
+</div>
+<div class="layui-fluid" id="formContent">
+    <form class="layui-form" id="mainForm" method="post" action="/Work/WorkFlow/Deal"></form>
+    @Html.Partial("FlowHistory")
+</div>
+
+<div class="layui-userselector" style="display: none;">
+    @Html.Partial("UserSelector")
+</div>
+
+@section Bottom{
+    <!-- // 全局加载第三方JS -->
+    <script src="~/Content/formdesigner/cascadata.js"></script>
+    <script src="~/Content/formdesigner/tinymce/tinymce.min.js"></script>
+    <script>
+
+    var workId = "@ViewBag.workId";
+    var processId = "@ViewBag.processId";
+    layui.config({
+        version: true,
+        base: '../../Content/formdesigner/module/'
+    }).extend({
+        cascader: 'cascader/cascader',
+        tags: 'tags/tags',
+        formDesign: 'formDesign/formDesign',
+    }).use(['form', 'formDesign'], function () {
+        var form = layui.form;
+        var formDesign = layui.formDesign;
+
+        // 加载所有流程节点表单
+        $.ajax({
+            url: "/Work/WorkFlow/GetWorkProcessFormListAsync",    //后台数据请求地址
+            type: "get",
+            data: { workId: workId },
+            async: false,
+            success: function (result) {
+                if (result) {
+                    var list = JSON.parse(result);
+                    for (var i = 0; i < list.length; i++) {
+                        var data = list[i];
+                        var jsonData = JSON.parse(data.form.JsonData);
+                        var formData = data.formData;
+                        var elem = $('#historyForm');
+                        var panel = $('<div class="layui-panel" style="padding: 5px;margin-top: 5px;"></div>');
+                        for (let index = 0; index < jsonData.length; index++) {
+                            var element = jsonData[index];
+                            element.name = element.name + i;
+                            if (formData && formData.length > index + 1) element.default = formData[index + 1].Value;
+                            //element.disabled = true;
+                            element.readonly = true;
+                            outerHTML = formDesign.renderComponentItem[element.tag].render(element);
+                            panel.append($(outerHTML).prop('outerHTML'));
+                        }
+                        var footer = $('<div class="layui-form-item"><label class="layui-form-label">提交人</label><div class="layui-form-mid layui-text-em">' +
+                            data.form.SubmitterName + '</div><label class="layui-form-label">提交时间</label><div class="layui-form-mid layui-text-em">' +
+                            data.form.SubmitTimeStr + '</div></div>');
+                        panel.append(footer);
+                        elem.append(panel);
+                        renderComponent(jsonData);
+                    }
+                    form.render();
+                }
+            }
+        });
+        $.ajax({
+            url: "/Work/WorkFlow/GetFlowProcessForm",    //后台数据请求地址
+            type: "get",
+            data: { processId: processId },
+            async: false,
+            success: function (result) {
+                if (result) {
+                    var data = JSON.parse(result);
+                    var jsonData = JSON.parse(data.form.JsonData);
+                    var formData = data.formData;
+
+                    var formId = data.form.TableName
+                    html = '<input type="hidden" name="flowId" value="0">';
+                    html += '<input type="hidden" name="processId" value="' + processId + '">';
+                    html += '<input type="hidden" name="tableName" value="' + formId + '">';
+                    html += '<input type="hidden" name="isApproval" value="' + data.form.IsApproval + '">';
+                    html += '<input type="hidden" id="isSave" name="isSave" value="' + 1 + '">';
+                    for (let index = 0; index < jsonData.length; index++) {
+                        var element = jsonData[index];
+                        if (formData && formData.length > index + 1) element.default = formData[index + 1].Value;
+                        html += formDesign.renderComponentItem[element.tag].render(element);
+                    }
+                    html = html.replace(/<ol[^>]+>/g, '').replace(/<\/ol>/g, '');
+                    html = html.replace(/<div class="layui-component-tools">.*?<\/div>/g, '');
+                    // 获取提交代码
+                    subHtml = html;
+                    subHtml += '<div class="layui-form-item">';
+                    subHtml += '<label class="layui-form-label"></label><button type="submit" class="layui-btn" lay-submit="" lay-filter="submitBtn">立即提交</button>';
+                    subHtml += '<button type="submit" class="layui-btn" lay-submit="" lay-filter="saveBtn">暂存</button>';
+                    subHtml += '<button type="button" class="layui-btn" id="transferBtn">转办</button>';
+                    subHtml += '<button type="reset" class="layui-btn layui-btn-primary">重置</button>';
+                    subHtml += '</div>';
+                    html = subHtml;
+
+                    var formWidth = $('#formWidth').val();
+                    if (formWidth) {
+                        formWidth += 'px';
+                    } else {
+                        formWidth = '65%';
+                    }
+
+                    var formHeight = $('#formHeight').val();
+                    if (formHeight) {
+                        formHeight += 'px';
+                    } else {
+                        formHeight = '65%';
+                    }
+                    var elem = $("#mainForm");
+                    var panel = $('<div class="layui-panel" style="padding: 5px;margin-top: 5px;"></div>');
+                    panel.html(html);
+                    renderComponent(jsonData);
+                    elem.append(panel);
+                    form.render();
+
+                    //监听提交
+                    form.on('submit(submitBtn)', function (data) {
+                        $("#isSave").val(0);
+                        tinyMCE.triggerSave();
+                        $("#mainForm").ajaxSubmit({
+                            success: function (slt) {
+                                if (slt) {
+                                    if (slt.success) {
+                                        if (slt.data == 1) {
+                                            parent.layer.msg('处理成功', { time: 3000 });
+                                        }
+                                        else {
+                                            parent.layer.msg('已发送给下个处理人：' + slt.data, { time: 3000 });
+                                        }
+                                        setTimeout(function () {
+                                            //重定向到待办工作页面
+                                        location.href = '@Url.Action("Backlog", "WorkFlow", new { area="Work"})';
+                                        }, 3000);
+                                    }
+                                    else {
+                                        if (slt.data == -2) {
+                                            layer.msg('未找到处理人，请确认申请人是否配置了部门和职位');
+                                        }
+                                        else {
+                                            layer.msg(slt.message || '操作失败，请重试');
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        return false;
+                    });
+
+                    //监听保存
+                    form.on('submit(saveBtn)', function (data) {
+                        $("#isSave").val(1);
+                        tinyMCE.triggerSave();
+                        $("#mainForm").ajaxSubmit({
+                            success: function (slt) {
+                                if (slt && slt.success) {
+                                    layer.msg('保存成功。');
+                                }
+                                else {
+                                    layer.msg(slt.message || '保存失败，请重试');
+                                }
+                            }
+                        });
+                        return false;
+                    });
+
+                    $('#transferBtn').on('click', function () {
+                        layer.open({
+                            type: 1,
+                            title: '选择员工'
+                            , content: $('.layui-userselector')
+                            , area: ['720px', '420px']
+                            , shade: false
+                            , resize: false
+                            , maxmin: false
+                            , success: function (layero, index) {
+
+                            },
+                            btn: ['确定'],
+                            // 按钮1 的回调
+                            btn1: function (index, layero, that) {
+                                var users = [];
+                                for (var i = 0; i < $("#selectedUser>li").length; i++) {
+                                    users.push($("#selectedUser>li").eq(i).attr('data-id'));
+                                }
+                                $.ajax({
+                                    url: "/Work/WorkFlow/WorkTranfer",    //后台数据请求地址
+                                    type: "post",
+                                    data: { processId: processId, transferUser: users.join() },
+                                    async: false,
+                                    success: function (slt) {
+                                        if (slt && slt.success) {
+                                            layer.msg('转办成功。');
+                                            //重定向到待办工作页面
+                                            location.href = '@Url.Action("Backlog", "WorkFlow", new { area="Work"})';
+                                        }
+                                        else {
+                                            layer.msg(slt.message || '操作失败，请重试。');
+                                        }
+                                    }
+                                });
+                            },
+                        });
+                    })
+                }
+            }
+        });
+
+        function renderComponent(jsonData) {
+            for (let index = 0; index < jsonData.length; index++) {
+                var element = jsonData[index];
+                formDesign.renderComponentExtend(element, index);
+            }
+        }
+    })
+    </script>
+}

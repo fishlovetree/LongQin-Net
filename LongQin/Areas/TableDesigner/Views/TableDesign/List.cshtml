@@ -1,0 +1,74 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@{
+    ViewBag.Title = "列表清单";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/TableDesigner/TableDesign/List">列表清单</a>
+    </span>
+</blockquote>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" lay-event="create">新建</button>
+    </div>
+</script>
+<table class="layui-hide" id="tb" lay-filter="tb"></table>
+
+<script type="text/html" id="bar">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+<script>
+    layui.use(['table', 'form'], function () {
+        var table = layui.table;
+            var form = layui.form;
+
+        table.render({
+            elem: '#tb',
+            url: '/TableDesigner/TableDesign/GetList/',
+            cellMinWidth: 80,
+            toolbar: '#toolbar', //开启头部工具栏，并为其绑定左侧模板
+            defaultToolbar: [],
+            cols: [[
+            { field: 'Id', width: 80, title: 'ID', sort: true },
+            { field: 'TableName', title: '列表名称' },
+            { field: 'FormName', title: '数据源' },
+            { field: 'CreatorName', title: '创建人' },
+            { field: 'CreateTime', title: '创建时间' },
+            { fixed: 'right', title: '操作', toolbar: '#bar', width: 200 }
+            ]]
+          , page: true
+        });
+
+        //头工具栏事件
+        table.on('toolbar(tb)', function (obj) {
+            switch (obj.event) {
+                case 'create':
+                    location.href = '@Url.Action("index", "tabledesign", new { area="tabledesigner"})' + '?id=0';
+                    break;
+            };
+        });
+
+        //监听行工具事件
+        table.on('tool(tb)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'del') {
+                layer.confirm('确定要删除吗？', function (index) {
+                    $.post('/TableDesigner/TableDesign/Delete', { id: data.Id }, function (slt) {
+                        if (slt && slt.success) {
+                            obj.del();
+                            layer.close(index);
+                        }
+                        else {
+                            layer.msg(slt.message || '操作失败，请重试');
+                        }
+                    });
+                });
+            } else if (obj.event === 'edit') {
+                location.href = '@Url.Action("index", "tabledesign", new { area="tabledesigner"})' + '?id=' + data.Id;
+            } 
+        });
+    });
+</script>

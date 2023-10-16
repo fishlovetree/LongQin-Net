@@ -1,0 +1,143 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@model LongQin.Models.FlowDesigner
+@{
+    ViewBag.Title = "流程设计器";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/FlowDesigner/FlowDesign/Index">流程设计器</a>
+    </span>
+</blockquote>
+<div class="layui-fluid">
+    <form class="layui-form layui-card" id="mainForm" lay-filter="mainForm">
+        <input type="text" name="e2ent_id" value="{$data.id}" hidden="">
+        <input type="hidden" name="flowId" id="flowId" value="@Model.FlowId" hidden="">
+        <div class="layui-card-body">
+            <div class="layui-row layui-col-space30">
+                <div class="layui-col-md9" style="padding-top: 0;">
+                    <div class="layui-card-header">
+                        <div>
+                            <button type="button" class="layui-btn layui-btn-sm layui-btn-node" onclick="mflow.util.addrect()"><i class="layui-icon layui-icon-component"></i>添加节点</button>
+                            <button type="button" class="layui-btn layui-btn-sm layui-btn-link" onclick="mflow.util.addpath()"><i class="layui-icon layui-icon-link"></i>添加连线</button>
+                            <div class="layui-form-mid layui-text-em"><i class="layui-icon layui-icon-about"></i>选中元素后按Delete键删除</div>
+                        </div>
+                    </div>
+                    <!-- // 流程设计区域 -->
+                    <div id="flowBuilder" style="width: 100%;height:800px"></div>
+                </div>
+                <div class="layui-col-md3" style="padding-top: 0;">
+                    <div class="layui-tab layui-tab-brief">
+                        <ul class="layui-tab-title">
+                            <li class="layui-this">元素属性</li>
+                            <li>流程属性</li>
+                        </ul>
+
+                        <div class="layui-tab-content" id="layui-form-attribute">
+                            <div class="layui-tab-item layui-form layui-show" id="ElementPropertie" lay-filter="ElementPropertie"></div>
+                            <div class="layui-tab-item">
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label"><font color="red">*</font>流程名</label>
+                                    <div class="layui-input-inline">
+                                        <input type="text" id="flowName" name="FlowName" class="layui-input" value="@Model.FlowName" lay-verify="required|max" lay-reqtext="请填写流程名" lay-max="25" lay-pretext="流程名" placeholder="请填写流程名">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label"><font color="red">*</font>流程类别</label>
+                                    <div class="layui-input-inline">
+                                        <select id="sort" lay-verify="required" lay-reqtext="请选择一个流程类别">
+                                            <option value="">请选择一个流程类别</option>
+                                            <option value="1">考勤类</option>
+                                            <option value="2">行政类</option>
+                                            <option value="3">业务类</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="layui-footer layui-form-footer">
+            <button class="layui-btn layui-btn-flow-commit" lay-filter="submitIframe" type="button" lay-submit>提交</button>
+        </div>
+    </form>
+</div>
+
+<link rel="stylesheet" href="~/Content/formdesigner/module/formDesign/formdesign.css">
+<!-- // 加载font-awesome图标 -->
+<link href="~/Content/formdesigner/css/font-awesome.css" rel="stylesheet" type="text/css" />
+<style type="text/css">
+    #layui-form-attribute .layui-form-label {
+        width: 70px !important;
+    }
+</style>
+<script type="text/javascript" src="@Url.Content("~/Content/flowdesigner/raphael-min.js")"></script>
+<script type="text/javascript" src="@Url.Content("~/Content/flowdesigner/raphael-flow.js")"></script>
+
+<script>
+    var save_url = "@Url.Action("Save", "FlowDesign", new { area = "FlowDesigner" })";
+    var pager;
+    var mflow;
+</script>
+
+<script>
+    /*$(function () {
+        var v = $("#flowBuilder").width();
+        var e = $("#flowBuilder").height();
+        pager = new Raphael(document.getElementById("flowBuilder"), v, e);
+        mflow = $.Flow.createNew(pager);
+        mflow.init();
+    });*/
+
+
+    layui.use(['form', 'treeSelect'], function () {
+        var form = layui.form;
+        var treeSelect = layui.treeSelect;
+
+        //自定义验证规则
+        form.verify({
+            max: function (value, item) {
+                var maxLen = item.getAttribute('lay-max');
+                var pretext = item.getAttribute('lay-pretext');
+                if (value.length > maxLen) {
+                    return pretext + '不能大于' + maxLen + '个字符的长度';
+                }
+            }
+        });
+
+        if ("@Model.FlowSort" != "0"){
+            $("#sort").val("@Model.FlowSort");
+        }
+        form.render();
+        var flowId = "@Model.FlowId";
+        var v = $("#flowBuilder").width();
+        var e = $("#flowBuilder").height();
+        pager = new Raphael(document.getElementById("flowBuilder"), v, e);
+        mflow = $.Flow.createNew(pager, form, treeSelect);
+        if (flowId == "0") {
+            mflow.init();
+        }
+        else {
+            $.ajax({
+                url: "/FlowDesigner/FlowDesign/GetFlowJson",    //后台数据请求地址
+                type: "get",
+                data: { flowId: flowId },
+                async: false,
+                success: function (result) {
+                    if (result) {
+                        var r = { data: eval(result) };
+                        mflow.init(r);
+                    }
+                }
+            });
+        }
+
+        $('body').on('click', '.layui-btn-flow-commit', function (e) {
+
+            mflow.util.save();
+        })
+    })
+</script>

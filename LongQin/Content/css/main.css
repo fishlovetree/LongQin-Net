@@ -1,0 +1,12 @@
+﻿@charset "utf-8";
+/* CSS Document */
+
+.layui-elem-quote{padding:5px;}
+.layui-body{padding:5px;}
+
+.layui-layout-admin .layui-logo {
+    color: rgba(255,255,255,1);
+    text-align: left;
+    padding:0px 20px;
+}
+

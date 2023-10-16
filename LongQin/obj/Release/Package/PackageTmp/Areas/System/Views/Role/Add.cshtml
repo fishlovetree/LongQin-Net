@@ -1,0 +1,106 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@model LongQin.Models.Role
+
+@{
+    ViewBag.Title = Model.RoleId == 0 ? "添加角色" : "编辑角色";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/System/Role/Index">角色管理</a>
+        <a><cite>@ViewBag.Title</cite></a>
+    </span>
+</blockquote>
+<form class="layui-form" id="mainForm" method="post" action="/System/Role/Set" lay-filter="mainform">
+    @Html.HiddenFor(m => m.RoleId)
+    @if (ViewBag.OrganizationId == 0)
+    {
+        <div class="layui-form-item">
+            <label class="layui-form-label">所属公司</label>
+            <div class="layui-input-block">
+                <select name="OrganizationId" id="OrganizationId" autocomplete="off" lay-search="">
+                </select>
+            </div>
+        </div>
+    }
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span style="color:red">*</span>角色名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="RoleName" value="@Model.RoleName" lay-verify="required|max" lay-reqtext="请填写角色名称" lay-max="25" lay-pretext="角色名称" placeholder="请填写角色名称" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">角色描述</label>
+        <div class="layui-input-block">
+            <input type="text" name="Description" value="@Model.Description" lay-verify="max" lay-max="100" lay-pretext="角色描述" placeholder="请填写角色描述" autocomplete="off" class="layui-input" />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button type="submit" class="layui-btn" lay-submit="" lay-filter="submitBtn">立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+</form>
+
+@section Bottom{
+    <script>
+        layui.use(['form'], function () {
+            var form = layui.form, layer = layui.layer;
+
+            //自定义验证规则
+            form.verify({
+                max: function (value, item) {
+                    var maxLen = item.getAttribute('lay-max');
+                    var pretext = item.getAttribute('lay-pretext');
+                    if (value.length > maxLen) {
+                        return pretext + '不能大于' + maxLen + '个字符的长度';
+                    }
+                }
+            });
+
+            //监听提交
+            form.on('submit(submitBtn)', function (data) {
+                $("#mainForm").ajaxSubmit({
+                    success: function (slt) {
+                        if (slt && slt.success) {
+                            location.href = '@Url.Action("index", "role", new { area="system"})';
+                        }
+                        else {
+                            layer.msg(slt.message || '操作失败，请重试。');
+                        }
+                    }
+                });
+                return false;
+            });
+
+            $.ajax({
+                url: '@Url.Action("GetAllOrganization", "Organization", new { area = "System" })',
+                type: "get",
+                success: function (b) {
+                    var data = eval('(' + b + ')');
+                    if (data.code === 0) {
+                        var opt = '';
+                        //获取返回的数据
+                        var value = data.data;
+                        //循环遍历
+                        for (var i in value) {
+                            if (value[i].OrganizationId == @Model.OrganizationId) {
+                                opt += '<option value = "' + value[i].OrganizationId + '" selected>' + value[i].OrganizationName + '</option>'
+                            }
+                            else {
+                                opt += '<option value = "' + value[i].OrganizationId + '">' + value[i].OrganizationName + '</option>'
+                            }
+                        }
+                        $("#OrganizationId").html(opt);
+                        form.render('select');//需要渲染一下
+
+                    }
+                }
+            });
+        });
+
+    </script>
+}
+

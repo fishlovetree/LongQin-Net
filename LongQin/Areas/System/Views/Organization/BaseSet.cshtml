@@ -1,0 +1,125 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@model LongQin.Models.Organization
+
+@{
+    ViewBag.Title = "系统设置";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/System/Organization/BaseSet">系统设置</a>
+    </span>
+</blockquote>
+<form class="layui-form" id="mainForm" method="post" action="/System/Organization/Set">
+    @Html.HiddenFor(m => m.OrganizationId)
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span style="color:red">*</span>公司名</label>
+        <div class="layui-input-block">
+            <input type="text" name="OrganizationName" value="@Model.OrganizationName" lay-verify="required|max" lay-reqtext="请填写公司名称" lay-max="25" lay-pretext="公司名" placeholder="请填写公司名称" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">机构代码</label>
+        <div class="layui-input-block">
+            <input type="text" name="OrganizationCode" value="@Model.OrganizationCode" lay-verify="max|number" lay-max="25" lay-pretext="机构代码" placeholder="请填写机构代码" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">地址</label>
+        <div class="layui-input-block">
+            <input type="text" name="Address" value="@Model.Address" lay-verify="max" lay-max="50" lay-pretext="地址" placeholder="请填写地址" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">联系电话</label>
+        <div class="layui-input-block">
+            <input type="text" name="Phone" value="@Model.Phone" lay-verify="phone" placeholder="请填写联系电话" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">LOGO</label>
+        <div class="layui-input-block">
+            <img src="@Model.LogoPath" id="logoPreview" style="width:200px;height:200px;border:1px solid #eee;" />
+            <input type="hidden" name="Logo" value="@Model.LogoPath" />
+            <a href="javascript:void(0)" onclick="$('#fileLogo').click()" class="btn-link" style="position:relative;top:90px;">点击上传</a>
+            <input type='file' id='fileLogo' name='fileLogo' style='display:none;'>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">系统名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="SystemName" value="@Model.SystemName" lay-verify="max" lay-max="25" lay-pretext="系统名称" placeholder="请填写系统名称" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">公司简介</label>
+        <div class="layui-input-block">
+            <input type="text" name="Introduction" value="@Model.Introduction" lay-verify="max" lay-max="100" lay-pretext="公司简介" placeholder="请输入公司简介" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button type="submit" class="layui-btn" lay-submit="" lay-filter="submitBtn">立即提交</button>
+        </div>
+    </div>
+</form>
+
+@section Bottom{
+    <script>
+        layui.use(['form'], function () {
+            var form = layui.form
+            , layer = layui.layer;
+
+            //自定义验证规则
+            form.verify({
+                max: function (value, item) {
+                    var maxLen = item.getAttribute('lay-max');
+                    var pretext = item.getAttribute('lay-pretext');
+                    if (value.length > maxLen) {
+                        return pretext + '不能大于' + maxLen + '个字符的长度';
+                    }
+                }
+            });
+
+            //监听提交
+            form.on('submit(submitBtn)', function (data) {
+                $("#mainForm").ajaxSubmit({
+                    success: function (slt) {
+                        if (slt && slt.success) {
+                            layer.msg(slt.message || '操作成功');
+                        }
+                        else {
+                            layer.msg(slt.message || '操作失败，请重试。');
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+
+        //上传图片预览
+        function imagePreview(file, $preObj) {
+            if (!/\.(gif|jpg|jpeg|png|GIF|JPG|JPEG|PNG)$/.test(file.name)) {
+                layer.msg("上传文件类型必须是gif,jpeg,jpg,png中的一种。");
+                return;
+            }
+            var maxSize = 4 * 1024 * 1024;
+            if (file.size > maxSize) {
+                layer.msg("上传文件不能大于4M。");
+                return;
+            }
+            var r = new FileReader();
+            r.readAsDataURL(file);
+            $(r).load(function () {
+                $preObj.attr("src", this.result);
+            });
+        }
+
+        $('#fileLogo').change(function () {
+            imagePreview(this.files[0], $("#logoPreview"));
+        });
+
+    </script>
+}
+

@@ -1,0 +1,81 @@
+﻿body > div, form > div {
+    margin: 0 auto;
+}
+
+.yunBg {
+    background: #C5C5C5 url(/content/images/loginbg.png) no-repeat center top;
+}
+
+.yunMain {
+    width: 1003px;
+}
+
+.yunTop {
+    height: 88px;
+    margin: 0px auto;
+    width: 870px;
+}
+
+.yunLogo {
+    display: inline;
+    margin: 30px 0px 0px 4px;
+    float: left;
+}
+
+.yunItmName {
+    margin: 0px auto;
+    height: 80px;
+    width: 688px;
+}
+
+    .yunItmName img {
+        margin: 13px 13px 0px 0px;
+        float: left;
+    }
+
+.yunItmS {
+    font: 18px/58px "微软雅黑";
+    float: left;
+    height: 58px;
+}
+
+.yunBox {
+    margin: 0px auto;
+    height: 400px;
+    width: 870px;
+}
+
+.yun_u1 ul li {
+    line-height: 34px;
+    height: 34px;
+    margin-bottom: 25px;
+}
+
+.yunFooter {
+    line-height: 24px;
+    text-align: center;
+    padding: 22px 0px 30px;
+    border-top: 1px solid #AAAAAA;
+}
+
+.table-login {
+    width: 80%;
+    margin: 40px auto;
+}
+
+.table-login .first-td {
+    width: 100px;
+    vertical-align: middle;
+    text-align: right;
+}
+.table-login td {
+    border: none !important;
+}
+
+.w300 {
+    width: 300px;
+}
+
+.layui-form-label {
+    width: 100px;
+}

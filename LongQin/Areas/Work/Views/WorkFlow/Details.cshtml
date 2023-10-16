@@ -1,0 +1,88 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@{
+    ViewBag.Title = "工作明细";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/Work/WorkFlow/Completed">已办工作</a>
+        <a><cite>@ViewBag.Title</cite></a>
+    </span>
+</blockquote>
+<div class="layui-fluid" id="history">
+    <form class="layui-form" id="historyForm"></form>
+</div>
+<div class="layui-fluid" id="formContent">
+    <form class="layui-form" id="mainForm" method="post" action="/Work/WorkFlow/Deal"></form>
+    @Html.Partial("FlowHistory")
+</div>
+<div id="hiddenArea" style="display:none"></div>
+
+<div class="layui-userselector" style="display: none;">
+    @Html.Partial("UserSelector")
+</div>
+
+@section Bottom{
+    <!-- // 全局加载第三方JS -->
+    <script src="~/Content/formdesigner/cascadata.js"></script>
+    <script src="~/Content/formdesigner/tinymce/tinymce.min.js"></script>
+    <script>
+
+    var workId = "@ViewBag.workId";
+    var processId = "@ViewBag.processId";
+    layui.config({
+        version: true,
+        base: '../../Content/formdesigner/module/'
+    }).extend({
+        cascader: 'cascader/cascader',
+        tags: 'tags/tags',
+        formDesign: 'formDesign/formDesign',
+    }).use(['form', 'formDesign'], function () {
+        var form = layui.form;
+        var formDesign = layui.formDesign;
+
+        // 加载所有流程节点表单
+        $.ajax({
+            url: "/Work/WorkFlow/GetWorkProcessFormListAsync",    //后台数据请求地址
+            type: "get",
+            data: { workId: workId },
+            async: false,
+            success: function (result) {
+                if (result) {
+                    var list = JSON.parse(result);
+                    for (var i = 0; i < list.length; i++) {
+                        var data = list[i];
+                        var jsonData = JSON.parse(data.form.JsonData);
+                        var formData = data.formData;
+                        var elem = $('#historyForm');
+                        var panel = $('<div class="layui-panel" style="padding: 5px;margin-top: 5px;"></div>');
+                        for (let index = 0; index < jsonData.length; index++) {
+                            var element = jsonData[index];
+                            element.name = element.name + i;
+                            if (formData && formData.length > index + 1) element.default = formData[index + 1].Value;
+                            //element.disabled = true;
+                            element.readonly = true;
+                            outerHTML = formDesign.renderComponentItem[element.tag].render(element);
+                            panel.append($(outerHTML).prop('outerHTML'));
+                        }
+                        var footer = $('<div class="layui-form-item"><label class="layui-form-label">提交人</label><div class="layui-form-mid layui-text-em">' +
+                            data.form.SubmitterName + '</div><label class="layui-form-label">提交时间</label><div class="layui-form-mid layui-text-em">' +
+                            data.form.SubmitTimeStr + '</div></div>');
+                        panel.append(footer);
+                        elem.append(panel);
+                        renderComponent(jsonData);
+                    }
+                    form.render();
+                }
+            }
+        });
+
+        function renderComponent(jsonData) {
+            for (let index = 0; index < jsonData.length; index++) {
+                var element = jsonData[index];
+                formDesign.renderComponentExtend(element, index);
+            }
+        }
+    })
+    </script>
+}

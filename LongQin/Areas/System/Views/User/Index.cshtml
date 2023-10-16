@@ -1,0 +1,148 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@{
+    ViewBag.Title = "用户管理";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/System/User/Index">用户管理</a>
+    </span>
+</blockquote>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" lay-event="create">新建</button>
+    </div>
+</script>
+
+<div class="layui-inline">
+    <div class="layui-inline" style="margin-left:10px">
+        <button class="layui-btn layui-btn-sm create_btn">新建</button>
+    </div>
+    <div class="layui-inline">
+        <input type="text" name="department" id="department" lay-filter="department" class="layui-input" />
+    </div>
+    <div class="layui-inline">
+        <input type="text" name="nickName" id="nickName" lay-filter="nickName" placeholder="请填写用户名" class="layui-input" />
+    </div>
+</div>
+<button type="button" class="layui-btn layui-btn-primary layui-btn-sm search_btn" lay-event="search" style="padding:0px 3px 0px 5px">
+    <i class="layui-icon">&#xe615;</i>
+</button>
+<table class="layui-hide" id="tb" lay-filter="tb"></table>
+
+<script type="text/html" id="bar">
+    <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="setRole">设置角色</a>
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+<script type="text/html" id="avatarImg">
+    <img src="{{d.Avatar}}" style="width:50px;height:50px" alt="" />
+</script>
+
+<script>
+    layui.use(['table', 'treeSelect'], function () {
+        var table = layui.table;
+        var treeSelect = layui.treeSelect;
+
+        table.render({
+            elem: '#tb',
+            url: '/System/User/GetUserList/',
+            cellMinWidth: 80,
+            //toolbar: '#toolbar', //开启头部工具栏，并为其绑定左侧模板
+            defaultToolbar: [],
+            cols: [[
+                { field: 'UserId', width: 80, title: 'ID', sort: true },
+                { field: 'DepartmentName', title: '所属部门' },
+                { field: 'UserName', title: '账号名' },
+                { field: 'NickName', title: '昵称' },
+                { field: 'PositionName', title: '职位' },
+                { filed: 'Avatar', title: '头像', templet: '#avatarImg', unresize: true },
+                { field: 'CreateTime', title: '创建时间' },
+                { fixed: 'right', title: '操作', toolbar: '#bar', width: 250 }
+            ]]
+          , page: true
+        });
+
+        //头工具栏事件
+        table.on('toolbar(tb)', function (obj) {
+            switch (obj.event) {
+                case 'create':
+                    location.href = '@Url.Action("add", "user", new { area="system"})' + '?id=0';
+                    break;
+            };
+        });
+
+        //监听行工具事件
+        table.on('tool(tb)', function (obj) {
+            var data = obj.data;
+            //console.log(obj)
+            if (obj.event === 'del') {
+                layer.confirm('确定要删除吗？', function (index) {
+                    $.post('/System/User/Delete', { id: data.UserId }, function (slt) {
+                        if (slt && slt.success) {
+                            obj.del();
+                            layer.close(index);
+                        }
+                        else {
+                            layer.msg(slt.message || '操作失败，请重试');
+                        }
+                    });
+                });
+            } else if (obj.event === 'edit') {
+                location.href = '@Url.Action("add", "user", new { area="system"})' + '?id=' + data.UserId;
+            } else if (obj.event === 'setRole') {
+                location.href = '@Url.Action("setRole", "user", new { area="system"})' + '?id=' + data.UserId;
+            }
+        });
+
+        // 加载部门树
+        treeSelect.render({
+            // 选择器
+            elem: '#department',
+            // 异步获取下拉树需要显示的数据
+            data: '@Url.Action("GetDepartmentTree", "Department", new { area = "System" })' + '?id=0',
+            // 异步加载方式：get/post，默认get
+            type: 'post',
+            // 占位符
+            placeholder: '请选择部门',
+            // 是否开启搜索功能：true/false，默认false
+            search: true,
+            // 一些可定制的样式
+            style: {
+                folder: {
+                    enable: true
+                },
+                line: {
+                    enable: true
+                }
+            },
+            // 点击节点回调
+            click: function (d) {
+                $("#department").val(d.current.id);
+            },
+            // 加载完成后的回调函数
+            success: function (d) {
+
+            }
+        });
+
+        $(".create_btn").on("click", function () {
+            location.href = '@Url.Action("add", "user", new { area="system"})' + '?id=0';
+        });
+
+        $(".search_btn").on("click", function () {
+            var departmentId = $('#department').val();
+            var nickName = $('#nickName').val();
+            table.reload('tb', {
+                where: { //设定异步数据接口的额外参数，任意设
+                    departmentId: departmentId,
+                    nickName: nickName
+                }
+                , page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+            })
+        });
+    });
+</script>

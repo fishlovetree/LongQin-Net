@@ -1,0 +1,379 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@{
+    ViewBag.Title = "表单列表";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/FormDesigner/FormDesign/List">表单列表</a>
+    </span>
+</blockquote>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" lay-event="create">新建</button>
+    </div>
+</script>
+<table class="layui-hide" id="tb" lay-filter="tb"></table>
+
+<script type="text/html" id="bar">
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="preview">预览</a>
+</script>
+
+<!-- // 全局加载第三方JS -->
+<script src="~/Content/formdesigner/cascadata.js"></script>
+<script src="~/Content/formdesigner/tinymce/tinymce.min.js"></script>
+<script>
+    layui.config({
+        version: true,
+        base: '../../Content/formdesigner/module/'
+    }).extend({
+        cascader: 'cascader/cascader',
+        tags: 'tags/tags',
+        formDesign: 'formDesign/formDesign',
+        }).use(['table', 'form', 'formDesign', 'tags'], function () {
+        var table = layui.table;
+            var form = layui.form;
+            var tags = layui.tags;
+            var formDesign = layui.formDesign;
+            var cascader = layui.cascader;
+
+        table.render({
+            elem: '#tb',
+            url: '/FormDesigner/FormDesign/GetFormList/',
+            cellMinWidth: 80,
+            toolbar: '#toolbar', //开启头部工具栏，并为其绑定左侧模板
+            defaultToolbar: [],
+            cols: [[
+            { field: 'Id', width: 80, title: 'ID', sort: true },
+            { field: 'FormName', title: '表单名' },
+            { field: 'JsonData', title: '表单JSON' },
+            { field: 'CreateTime', title: '创建时间' },
+            { fixed: 'right', title: '操作', toolbar: '#bar', width: 200 }
+            ]]
+          , page: true
+        });
+
+        //头工具栏事件
+        table.on('toolbar(tb)', function (obj) {
+            switch (obj.event) {
+                case 'create':
+                    location.href = '@Url.Action("index", "formdesign", new { area="formdesigner"})' + '?id=0';
+                    break;
+            };
+        });
+
+        //监听行工具事件
+        table.on('tool(tb)', function (obj) {
+            var data = obj.data;
+            //console.log(obj)
+            if (obj.event === 'del') {
+                layer.confirm('确定要删除吗？', function (index) {
+                    $.post('/FormDesigner/FormDesign/Delete', { id: data.Id }, function (slt) {
+                        if (slt && slt.success) {
+                            obj.del();
+                            layer.close(index);
+                        }
+                        else {
+                            layer.msg(slt.message || '操作失败，请重试');
+                        }
+                    });
+                });
+            } else if (obj.event === 'edit') {
+                location.href = '@Url.Action("index", "formdesign", new { area="formdesigner"})' + '?id=' + data.Id;
+            } else if (obj.event === 'preview') {
+                /*var formname = data.FormName,
+                html = '<div class="layui-fluid"><form id="' + formname + '" class="layui-form">';
+                html += data.JsonData;
+                html += '</form></div>';
+                html = html.replace(/<ol[^>]+>/g, '').replace(/<\/ol>/g, '');
+                html = html.replace(/<div class="layui-component-tools">.*?<\/div>/g, '');
+                // 获取提交代码
+                subHtml = html.substring(0, html.indexOf('</form>'));
+                subHtml += '<div class="layui-footer layui-form-item layui-center">';
+                subHtml += '<button class="layui-btn layui-btn-primary" type="button" sa-event="closeDialog">取消</button>';
+                subHtml += '<button class="layui-btn lay-submit" onclick="javascript:layer.msg(\'提交测试\');" type="button" >提交</button>';
+                subHtml += '</div>';
+                subHtml += html.substring(html.indexOf('</form>'));
+                html = subHtml;
+
+                var formWidth = $('#formWidth').val();
+                if (formWidth) {
+                    formWidth += 'px';
+                } else {
+                    formWidth = '65%';
+                }
+
+                var formHeight = $('#formHeight').val();
+                if (formHeight) {
+                    formHeight += 'px';
+                } else {
+                    formHeight = '65%';
+                }
+
+                layer.open({
+                    type: 1,
+                    title: '预览表单 - ' + formname,
+                    maxmin: true,
+                    area: [formWidth, formHeight],
+                    content: html,
+                    success: function (index, layero) {
+                        // 暂时只渲染layui元素
+                        // 剩下的需要在自身页面进行渲染
+                        form.render();
+                    }
+                });*/
+                //console.log(formDesign.renderComponentItem);
+
+                var formname = data.FormName;
+                var formid =data.TableName
+                html = '<div class="layui-fluid"><form id="' + formid + '" class="layui-form" method="post" action="/FormDesigner/FormDesign/TestForm">';
+                html += '<input type="hidden" name="tableName" value="' + formid + '">';
+                var jsonData = JSON.parse(data.JsonData);
+                for (let index = 0; index < jsonData.length; index++) {
+                    var element = jsonData[index];
+                    html += formDesign.renderComponentItem[element.tag].render(element);
+                }
+                html += '</form></div>';
+                html = html.replace(/<ol[^>]+>/g, '').replace(/<\/ol>/g, '');
+                html = html.replace(/<div class="layui-component-tools">.*?<\/div>/g, '');
+                // 获取提交代码
+                subHtml = html.substring(0, html.indexOf('</form>'));
+                subHtml += '<div class="layui-form-item">';
+                subHtml += '<label class="layui-form-label"></label><button type="submit" class="layui-btn" lay-submit="" lay-filter="submitBtn">立即提交</button>';
+                subHtml += '<button type="reset" class="layui-btn layui-btn-primary">重置</button>';
+                subHtml += '</div>';
+                subHtml += html.substring(html.indexOf('</form>'));
+                html = subHtml;
+
+                var formWidth = $('#formWidth').val();
+                if (formWidth) {
+                    formWidth += 'px';
+                } else {
+                    formWidth = '65%';
+                }
+
+                var formHeight = $('#formHeight').val();
+                if (formHeight) {
+                    formHeight += 'px';
+                } else {
+                    formHeight = '65%';
+                }
+                layer.open({
+                    type: 1,
+                    title: '预览表单 - ' + formname,
+                    maxmin: true,
+                    area: [formWidth, formHeight],
+                    content: html,
+                    success: function (index, layero) {
+                        // 渲染各个组件
+                        for (let index = 0; index < jsonData.length; index++) {
+                            var element = jsonData[index];
+                            switch (element.tag) {
+                                case 'input':
+                                    break;
+                                case 'date':
+                                    var datetime = $('*[lay-datetime]');
+                                    datetime.each(function (key, obj) {
+                                        var t = $(obj).data('datetype') || 'datetime',
+                                            f = $(obj).data('dateformat') || 'yyyy-MM-dd HH:mm:ss',
+                                            r = $(obj).data('range') || false,
+                                            max = $(obj).data('maxvalue') || '2222-12-31',
+                                            min = $(obj).data('minvalue') || '1930-01-01';
+
+                                        layui.laydate.render({
+                                            elem: this
+                                            , type: t
+                                            , range: r
+                                            , max: max
+                                            , min: min
+                                            , format: f
+                                            , done: function (value, date, end_date) {
+                                                console.log(value, date, end_date);
+                                            }
+                                        });
+                                    })
+                                    break;
+                                case 'colorpicker':
+                                    var picker = $('*[lay-colorpicker]');
+                                    picker.each(function (index, elem) {
+                                        var name = $(elem).attr("lay-colorpicker");
+                                        layui.colorpicker.render({
+                                            elem: this
+                                            , color: $('input[name=' + name + ']').val()
+                                            , predefine: true
+                                            , alpha: true
+                                            , done: function (color) {
+                                                $('input[name=' + name + ']').val(color);
+                                            }
+                                        });
+                                    })
+                                    break;
+                                case 'slider':
+                                    var slider = $('*[lay-slider]');
+                                    slider.each(function (index, elem) {
+                                        var that = $(this),
+                                            type = that.data('type') || 'default',
+                                            min = that.data('min') || 0,
+                                            max = that.data('max') || 100,
+                                            theme = that.data('theme') || '#1890ff',
+                                            step = that.data('step') || 1,
+                                            input = that.data('input') || false,
+                                            showstep = that.data('showstep') || false;
+
+                                        // 获取滑块默认值
+                                        var name = $(elem).attr("lay-slider");
+                                        var value = $('input[name=' + name + ']').val() || that.data('default');
+
+                                        layui.slider.render({
+                                            elem: elem
+                                            , type: type
+                                            , min: min
+                                            , max: max
+                                            , step: step
+                                            , showstep: showstep
+                                            , theme: theme
+                                            , input: input
+                                            , value: value
+                                            , change: function (value) {
+
+                                                if (value <= min || isNaN(value)) {
+                                                    value = min;
+                                                }
+
+                                                $('input[name=' + name + ']').val(value);
+                                            }
+                                        })
+                                    })
+                                    break;
+                                case 'rate':
+                                    var rate = $('*[lay-rate]');
+                                    rate.each(function (index, elem) {
+                                        var that = $(this),
+                                            theme = that.data('theme') || '#1890ff',
+                                            length = that.data('length') || 5,
+                                            half = that.data('half') || false,
+                                            readonly = that.data('readonly') || false;
+                                        var name = $(elem).attr("lay-rate");
+                                        var el = $('input[name=' + name + ']');
+                                        var value = el.val() || that.data('default');
+                                        layui.rate.render({
+                                            elem: elem
+                                            , half: half
+                                            , length: length
+                                            , theme: theme
+                                            , readonly: readonly
+                                            , value: value
+                                            , choose: function (value) {
+                                                el.val(value);
+                                            }
+                                        })
+                                    })
+                                    break;
+                                case 'upload':
+                                    //uploadFile(element.name, element.data_accept, element.data_size);
+                                    break;
+                                case 'tags':
+
+                                    layui.each($('.lay-tags'), function (i, e) {
+                                        $(e).remove();
+                                    })
+
+                                    layui.each($('*[lay-tags]'), function (index, elem3) {
+                                        tags.render({
+                                            elem: elem3,
+                                            done: function (key, all) { }
+                                        });
+                                    })
+                                    break;
+                                case 'cascader':
+                                    var elObj = [];
+                                    var caItem = 'input#' + element.name;
+                                    var value = $(caItem).val();
+                                    var propsValue = $(caItem).data('value') || 'value';
+                                    var parents = $(caItem).data('parents') || false;
+                                    if (typeof value != 'undefined' && value) {
+                                        value = value.split('/');
+                                        value = value[value.length - 1];
+                                        value = $.trim(value);
+                                    }
+
+                                    elObj[index] = cascader({
+                                        elem: caItem,
+                                        value: value,
+                                        clearable: true,
+                                        filterable: true,
+                                        showAllLevels: parents,
+                                        props: {
+                                            value: propsValue
+                                        },
+                                        options: cascader_data
+                                    });
+
+                                    elObj[index].changeEvent(function (value, node) {
+
+                                        if (node != null) {
+                                            if (parents == true) {
+                                                var arrpath = [];
+                                                for (const key in node.path) {
+                                                    var path = node.path[key].data;
+                                                    arrpath.push($.trim(path[propsValue]));
+                                                }
+                                                $(caItem).val(arrpath.join('/'));
+                                            } else {
+                                                $(caItem).val(node.data[propsValue]);
+                                            }
+                                        }
+                                        else {
+                                            $(caItem).val('');
+                                        }
+                                    });
+                                    break;
+                                case 'editor':
+                                    tinymce.init({
+                                        selector: '#' + element.name + '_tiny',
+                                        language: 'zh_CN',
+                                    })
+                                    break;
+                                case 'tab':
+                                case 'grid':
+                                    var children = $('#' + element.name + ' .children');
+                                    var childItem = []
+                                    $.each(children, function (index, item) {
+                                        that.gridtabSortable(item);
+                                        childItem[index] = item;
+                                    })
+
+                                    $.each(element.children, function (index, item) {
+                                        if (item.children.length) {
+                                            that.renderComponent(item.children, $(childItem[index]));
+                                        }
+                                    })
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        form.render();
+                    }
+                });
+
+                //监听提交
+                form.on('submit(submitBtn)', function (data) {
+                    /*$("#" + formid).ajaxSubmit({
+                        success: function (slt) {
+                            if (slt && slt.success) {
+                                //alert(slt.message || '操作失败，请重试。');
+                            }
+                            else {
+                                alert(slt.message || '操作失败，请重试。');
+                            }
+                        }
+                    });*/
+                    return false;
+                });
+            }
+        });
+    });
+</script>

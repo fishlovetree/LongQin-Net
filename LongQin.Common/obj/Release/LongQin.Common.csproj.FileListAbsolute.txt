@@ -1,0 +1,9 @@
+C:\Users\pc\source\repos\longqin\LongQin.Common\bin\Release\LongQin.Common.dll
+C:\Users\pc\source\repos\longqin\LongQin.Common\bin\Release\LongQin.Common.pdb
+C:\Users\pc\source\repos\longqin\LongQin.Common\bin\Release\NLog.dll
+C:\Users\pc\source\repos\longqin\LongQin.Common\bin\Release\NLog.xml
+C:\Users\pc\source\repos\longqin\LongQin.Common\obj\Release\LongQin.Common.csproj.AssemblyReference.cache
+C:\Users\pc\source\repos\longqin\LongQin.Common\obj\Release\LongQin.Common.csproj.CoreCompileInputs.cache
+C:\Users\pc\source\repos\longqin\LongQin.Common\obj\Release\LongQin.Common.csproj.CopyComplete
+C:\Users\pc\source\repos\longqin\LongQin.Common\obj\Release\LongQin.Common.dll
+C:\Users\pc\source\repos\longqin\LongQin.Common\obj\Release\LongQin.Common.pdb

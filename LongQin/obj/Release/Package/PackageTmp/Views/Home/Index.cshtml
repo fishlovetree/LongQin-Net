@@ -1,0 +1,225 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+<div class="layui-fluid" style="padding:15px;margin:-5px;">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md8">
+            <div class="layui-card">
+                <div class="layui-card-header">代办工作</div>
+                <div class="layui-card-body" id="backlog" style="height:250px;">
+                    <div class="backlog-header">
+                        <span class="backlog-logo"></span>
+                        <span class="backlog-tip">
+                            您有<b id="backlogCount"></b>
+                            <a class="backlog_link_txt" href="/Work/WorkFlow/Backlog" target="_blank">需处理待办</a>
+                        </span>
+                    </div>
+                </div>
+                <div class="layui-card-footer"><a class="backlog_link_more" href="/Work/WorkFlow/Backlog" target="_blank">更多</a></div>
+            </div>
+            <div class="layui-card">
+                <div class="layui-card-header">已办工作</div>
+                <div class="layui-card-body" style="height:250px;">
+                    <table class="layui-table">
+                        <colgroup>
+                            <col width="150">
+                            <col width="150">
+                            <col>
+                        </colgroup>
+                        <tbody id="completed">
+                            
+                        </tbody>
+                    </table>
+                </div>
+                <div class="layui-card-footer"><a class="backlog_link_more" href="/Work/WorkFlow/Completed" target="_blank">更多</a></div>
+            </div>
+        </div>
+        <div class="layui-col-md4">
+            <div class="layui-card">
+                <div class="layui-card-header">公告</div>
+                <div class="layui-card-body" style="height:250px;">
+                    上线啦
+                </div>
+                <div class="layui-card-footer"><a class="backlog_link_more" href="" target="_blank">更多</a></div>
+            </div>
+            <div class="layui-card">
+                <div class="layui-card-header">日程</div>
+                <div class="layui-card-body">
+                    <div class="layui-inline" id="calendar"></div>
+                </div>
+                <div class="layui-card-footer"><a class="backlog_link_more" href="" target="_blank">更多</a></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style type="text/css">
+    .layui-card {
+        box-shadow: 0 2px 8px -2px rgba(0, 0, 0, .125);
+    }
+    .layui-card-header {
+        border-bottom: 1px solid #d5d5d5;
+    }
+    .layui-card-footer {
+        height: 36px;
+    }
+    .backlog-header {
+        padding-top: 22px;
+        padding-bottom: 18px;
+        min-height: 30px;
+        margin: 0 auto;
+        position: relative;
+        padding-left: 0;
+        background: #EDF2FE url(../../Content/images/image_bangong.png) no-repeat right bottom;
+        margin-bottom: 10px;
+    }
+
+    .backlog-header b {
+        font-size: 16px;
+        color: #FF6600;
+        letter-spacing: 0.5px;
+    }
+
+    .backlog-header .backlog-logo {
+        display: inline-block;
+        width: 28px;
+        height: 28px;
+        background-image: url(../../Content/images/emall.png);
+        float: none;
+        margin: 0px 10px 0px;
+        position: relative;
+        top: -2px;
+        vertical-align: middle;
+    }
+
+    .backlog-header .backlog-tip #toViewCount {
+        font-size: 16px;
+        color: #ff6600;
+        font-weight: 400;
+    }
+
+    .backlog-header .backlog-tip .backlog_link_txt {
+        text-decoration: underline;
+    }
+
+    .todo-list-item-title {
+        line-height: 20px;
+        color: #333;
+        letter-spacing: 0.88px;
+        font-weight: 400;
+    }
+
+    .todo-list-item-content {
+        padding: 5px 0px 16px 0;
+        font-size: 13px;
+        color: #999999;
+        font-weight: 400;
+        line-height: 14px;
+    }
+
+    .todo-list-item-title-link {
+        color: #999999;
+        text-decoration: none;
+        background-color: transparent;
+        transition-duration: .3s;
+        cursor: pointer;
+    }
+
+    .todo-list-item-info {
+        margin-right: 20px;
+    }
+
+    .backlog_link_more {
+        float: right;
+        background-image: url(../../Content/images/more_default.png);
+        margin: 5px 15px 10px;
+        padding: 0;
+        display: inline-block;
+        width: 32px;
+        height: 22px;
+        border: 1px solid #d5d5d5;
+        border-radius: 3px;
+        background-color: #fff;
+        background-position: 50%;
+        background-repeat: no-repeat;
+        font-size: 0;
+        *
+	    white-space: -1px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+    }
+</style>
+
+<script>
+    layui.use(['table', 'laydate'], function () {
+        var table = layui.table;
+        var laydate = layui.laydate;
+
+        
+        //日期范围
+        laydate.render({
+            elem: '#calendar'
+            //设置开始日期、日期日期的 input 选择器
+            //数组格式为 2.6.6 开始新增，之前版本直接配置 true 或任意分割字符即可
+            , position: 'static'
+            , btns: ['now']
+            , calendar: true
+            , showBottom: false
+            , done: function (value, date, endDate) {
+                //this.mark[value] = '<span style="color:red">生日</span>';
+                //console.log(value); // 日期字符，如： 2017-08-18
+                //console.log(date); // 包含年月日时分秒各项值的对象
+                //console.log(endDate); // 结束日期时间对象，当设置 range 时才会返回。对象成员同上。
+            }
+        });
+
+        $.ajax({
+            url: "/Work/WorkFlow/GetProcessList/",    //后台数据请求地址
+            type: "get",
+            data: { status: 1, page: 1, limit: 3 },
+            async: false,
+            success: function (result) {
+                if (result) {
+                    var data = JSON.parse(result);
+                    $('#backlogCount').html(data.count);
+                    if (data.count == 0) return;
+                    for (var i = 0; i < data.data.length; i++) {
+                        var item = data.data[i];
+                        var elem = $('#backlog');
+                        var panel = $('<div class="todo-list-item"></div>');
+                        var title = $('<div class="todo-list-item-title"><a class="todo-list-item-title-link" href="/Work/WorkFlow/DealWork?workId=' + item.WorkId
+                            + '&processId=' + item.ProcessId + '&flowId=' + item.FlowId + '" target="_blank">' + item.NodeName + '</a></div>');
+                        panel.append(title);
+                        var content = $('<p class="todo-list-item-content"><span class="todo-list-item-info"> ' + item.CreatorName + ' </span>' +
+                            '<span class="todo-list-item-info"> ' + item.CreateTime + ' </span>' + 
+                            '<span class="todo-list-item-info"> ' + item.DepartmentName + ' </span></p>');
+                        panel.append(content);
+                        elem.append(panel);
+                    }
+                }
+            }
+        });
+
+        $.ajax({
+            url: "/Work/WorkFlow/GetProcessList/",    //后台数据请求地址
+            type: "get",
+            data: { status: 0, page: 1, limit: 6 },
+            async: false,
+            success: function (result) {
+                if (result) {
+                    var data = JSON.parse(result);
+                    if (data.count == 0) return;
+                    for (var i = 0; i < data.data.length; i++) {
+                        var item = data.data[i];
+                        var tbody = $('#completed');
+                        var content = $('<tr><td> ' + item.NodeName + ' </td><td> ' + item.CreatorName + ' </td><td> ' + item.CreateTime + ' </td><td> ' +
+                            item.DepartmentName + ' </td><tr>');
+                        tbody.append(content);
+                    }
+                }
+            }
+        });
+    });
+</script>
+

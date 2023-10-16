@@ -1,0 +1,129 @@
+﻿@using LongQin.Models
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LongQin</title>
+    <link href="~/Content/themes/blueskin/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/css/admin.css" rel="stylesheet">
+    <link href="~/Content/layui/css/layui.css" rel="stylesheet" />
+    <script src="~/Content/themes/blueskin/js/jquery-2.0.3.min.js"></script>
+    <script src="~/Content/themes/blueskin/js/bootstrap.min.js"></script>
+    <script src="~/Content/layui/layui.all.js"></script>
+    <!--[if lt IE 9]>
+      <script src="http://cdn.bootcss.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="http://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    @RenderSection("Head", false)
+
+</head>
+<body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">
+                    <span class="span-username">龙琴工作流</span>
+                </a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li class="li-menu-home"><a href="/home/index">首页</a></li>
+                @foreach (Menu item in ViewBag.MenuList)
+                {
+                    <li class="dropdown li-menu-system">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">@item.MenuName <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            @foreach (Menu child in @item.Children)
+                            {
+                                <li><a href="@(child.MenuUrl + "?parentId=" + item.MenuId)">@child.MenuName</a></li>
+                            }
+                        </ul>
+                    </li>
+                }
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="/" target="_blank">网站首页</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> admin <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/manage/user/editinfo">基础设置</a></li>
+                        <li><a href="/manage/user/updatepwd">修改密码</a></li>
+                        <li><a href="javascript:void(0)" class="quit">退出</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-3 col-md-2 sidebar">
+                <ul class="nav nav-sidebar">
+                    <li data-flag="1"><a href="1">1</a></li>
+                    <li data-flag="2"><a href="2">2</a></li>
+                </ul>
+            </div>
+            @RenderBody()
+        </div>
+    </div>
+
+    @RenderSection("Bottom", false)
+</body>
+</html>
+
+<script>
+    (function () {
+        //当前页导航高亮显示
+        var isIndex = true;
+        var href = location.href.toLowerCase();
+        /*var $lis = $(".nav-sidebar").children("li");
+
+        var systemMenus = ["user", "log"];
+        var schoolMenus = ["campus", "division", "school", "teacher", "major", "coursesystem", "course", "student", "works"];
+        var applyMenus = ["mailinfo", "copys", "heremore", "teacherquestion", "schoolapply", "majorapply", "workscomment", "courseapply", "courseorder", "programapply", "companyapply"];
+        var otherMenus = ["banner", "partner", "recruit", "contact", "about"];
+        var featureMenus = ["program"];
+
+        $.each($lis, function () {
+            var nav = $(this).attr("data-flag");
+            href = href.toLocaleLowerCase().replace(/\?.+/, '');
+            var arr = href.split('/');
+            var len = arr.length;
+            if ((len >= 1 && arr[len - 1] == nav) || (len >= 2 && arr[len - 2] == nav) || (len >= 3 && arr[len - 3] == nav)) {
+                $(this).addClass("active");
+                isIndex = false;
+
+                if (systemMenus.indexOf(nav) > -1) {
+                    $(".li-menu-system").addClass("active");
+                }
+                else if (schoolMenus.indexOf(nav) > -1) {
+                    $(".li-menu-school").addClass("active");
+                }
+                else if (applyMenus.indexOf(nav) > -1) {
+                    $(".li-menu-apply").addClass("active");
+                }
+                else if (featureMenus.indexOf(nav) > -1) {
+                    $(".li-menu-feature").addClass("active");
+                }
+                else if (otherMenus.indexOf(nav) > -1) {
+                    $(".li-menu-other").addClass("active");
+                }
+                else {
+                    $(".li-menu-home").addClass("active");
+                }
+
+                return false;
+            }
+        });
+
+        if (isIndex) {
+            $(".nav-sidebar li").eq(0).addClass("active");
+            $(".li-menu-home").addClass("active");
+        }*/
+    }());
+</script>

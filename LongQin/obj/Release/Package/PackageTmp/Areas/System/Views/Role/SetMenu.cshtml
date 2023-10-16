@@ -1,0 +1,102 @@
+﻿@{
+    ViewBag.Title = "功能菜单";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/System/Role/Index">角色管理</a>
+        <a><cite>@ViewBag.Title</cite></a>
+    </span>
+</blockquote>
+<form class="layui-form" id="mainForm" lay-filter="mainform">
+    <div class="layui-form-item">
+        <div id="menuTree"></div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit="" lay-filter="submitBtn">立即提交</button>
+        </div>
+    </div>
+</form>
+
+@section Bottom{
+    <script>
+        layui.use(['form', 'tree'], function () {
+            var form = layui.form
+            , $ = layui.jquery, layer = layui.layer;
+            var tree = layui.tree;
+
+            tree.render({
+                elem: '#menuTree',
+                data: getData(),
+                id: 'treeId',
+                showCheckbox: true  //是否显示复选框
+            });
+
+            //监听提交
+            form.on('submit(submitBtn)', function (data) {
+                var arr = [];
+                for (var p in data.field) {
+                    arr.push(data.field[p]);
+                }
+                if (arr.length == 0) {
+                    layer.msg('请至少选择一个菜单');
+                    return false;
+                }
+                $.ajax({
+                    url: "@Url.Action("SetMenu", "Role", new { area = "System" })",    //后台数据请求地址
+                    type: "post",
+                    data: { roleId: "@ViewBag.roleId", menuIds: arr.join() },
+                    async:false,
+                    success: function (slt) {
+                        if (slt && slt.success) {
+                            location.href = '@Url.Action("index", "role", new { area="system"})';
+                        }
+                        else {
+                            layer.msg(slt.message || '操作失败，请重试。');
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+
+        function getData(){
+            var data = [];
+            $.ajax({
+                url: "@Url.Action("GetUserMenuTree", "Menu", new { area = "System" })",    //后台数据请求地址
+                type: "get",
+                async: false,
+                success: function (result) {
+                    data = JSON.parse(result);
+                    var menuids = "@ViewBag.menuIds";
+                    if (menuids != "") {
+                        var menuArr = menuids.split(',');
+                        for (var p in data) {
+                            checkNode(menuArr, data[p]);
+                        }
+                    }
+                }
+            });
+            return data;
+        }
+
+        function checkNode(menuArr, p) {
+            if (p.children) {
+                for (var d in p.children) {
+                    checkNode(menuArr, p.children[d]);
+                }
+            }
+            else {
+                if (menuArr.indexOf('' + p.id) >= 0) {
+                    p.checked = true;
+                }
+            }
+        }
+    </script>
+}
+
+
+
+

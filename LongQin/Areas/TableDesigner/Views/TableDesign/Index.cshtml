@@ -1,0 +1,432 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@model LongQin.Models.TableDesigner
+@{
+    ViewBag.Title = "列表设计器";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/TableDesigner/TableDesign/Index">列表设计器</a>
+    </span>
+</blockquote>
+<div class="layui-fluid" style="height:calc(100% - 45px);">
+    <form class="layui-form layui-card" id="mainForm" lay-filter="mainForm" style="height:100%">
+        <input type="hidden" name="id" id="id" value="@Model.Id" hidden="">
+        <div class="layui-card-body" style="height:100%">
+            <div class="layui-row layui-col-space15 design-region">
+                <div class="layui-col-md3" style="height:100%">
+                    <div class="layui-card" style="height:100%">
+                        <div class="layui-card-header">基本信息</div>
+                        <div class="layui-card-body" style="height:calc(100% - 45px)">
+                            <div class="layui-form-item">
+                                <label class="layui-form-label"><font color="red">*</font>列表名称</label>
+                                <div class="layui-input-inline" style="width:140px;">
+                                    <input type="text" id="tableName" name="TableName" class="layui-input" value="@(Model.TableName ?? "")" lay-verify="required|max" lay-reqtext="请填写列表名" lay-max="25" lay-pretext="列表名" placeholder="请填写列表名" style="width:140px;">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label"><font color="red">*</font>表头数据源</label>
+                                <div class="layui-input-inline" style="width:140px;">
+                                    <select lay-filter="headSelected" lay-search id="dataSource" lay-verify="required" lay-reqtext="请选择一个表头数据源">
+                                        <option value="">请选择</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-col-md3" style="height:100%">
+                    <div class="layui-card" style="height:100%">
+                        <div class="layui-card-header">表头选择</div>
+                        <div class="layui-card-body" id="headers" style="height:calc(100% - 45px)">
+
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-col-md6" style="height: 100%">
+                    <div class="layui-card" style="height:100%">
+                        <div class="layui-card-header">表头属性(鼠标拖动调整位置)</div>
+                        <div class="layui-card-body" style="padding: 5px;height:calc(100% - 45px);">
+                            <div class="lui_dataview_classic" id="attributes">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-row layui-col-space15">
+                <div class="layui-col-md12" style="height:230px;">
+                    <div class="layui-card">
+                        <div class="layui-card-header">预览窗口</div>
+                        <div class="layui-card-body">
+                            <div class="layui-inline" id="search"></div>
+                            <button type="button" class="layui-btn layui-btn-primary layui-btn-sm search_btn" lay-event="search" style="padding:0px 3px 0px 5px">
+                                <i class="layui-icon">&#xe615;</i>
+                            </button>
+                            <button type="button" class="layui-btn layui-btn-primary layui-btn-sm export_btn" lay-event="export" style="padding:0px 3px 0px 5px">
+                                <i class="layui-icon">&#xe67d;</i>
+                            </button>
+                            <table class="layui-hide" id="tb" lay-filter="tb"></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="layui-footer layui-form-footer">
+            <button class="layui-btn layui-btn-commit" lay-filter="submitIframe" type="button" lay-submit>提交</button>
+        </div>
+    </form>
+</div>
+
+<style type="text/css">
+    .design-region {
+        height: calc(100% - 280px);
+    }
+
+    .layui-form-footer {
+        margin-bottom: 0px;
+        margin-top: 2px;
+        text-align: center;
+    }
+
+    .lui_dataview_classic_row {
+        clear: both;
+        padding: 4px 0px;
+        position: relative;
+        min-height: 20px;
+    }
+
+    .lui_dataview_classic_div {
+        margin-right: 5px;
+        display: block;
+        float: left;
+    }
+
+    .lui_dataview_classic_select {
+        width: 80px;
+    }
+</style>
+
+<script src="~/Content/formdesigner/Sortable/Sortable.js"></script>
+<script>
+
+    layui.use(['form', 'layer', 'numberInput', 'table', 'laydate'], function () {
+        var form = layui.form,
+            layer = layui.layer;
+        var numberInput = layui.numberInput;
+        var table = layui.table;
+        var laydate = layui.laydate;
+
+        //自定义验证规则
+        form.verify({
+            max: function (value, item) {
+                var maxLen = item.getAttribute('lay-max');
+                var pretext = item.getAttribute('lay-pretext');
+                if (value.length > maxLen) {
+                    return pretext + '不能大于' + maxLen + '个字符的长度';
+                }
+            }
+        });
+
+       // 表头及属性集合
+        var headers = JSON.parse('@Html.Raw(Json.Encode(Model.Columns))');
+        headers = headers == null ? [] : headers;
+
+        var getTableColumns = function (value) {
+            $('#headers').html('');
+            $.ajax({
+            url: "/TableDesigner/TableDesign/GetTableColumnList/",    // 后台数据请求地址
+                type: "get",
+                data: { tableName: value },
+                async: false,
+                success: function (slt) {
+                    if (slt) {
+                        var data = JSON.parse(slt);
+                        var columns = data.data;
+                        for (var i = 0; i < columns.length; i++) {
+                            var item = columns[i];
+                            if (item.Description) {
+                                var checked = false;
+                                for (var j = 0; j < headers.length; j++) {
+                                    if (headers[j].TableColumn == item.ColumnName) {
+                                        checked = true;
+                                        break;
+                                    }
+                                }
+                                var chk;
+                                if (checked) {
+                                    chk = '<input type="checkbox" name="headers" lay-skin="primary" lay-filter="headers" value="' + item.ColumnName + '" title="' + item.Description + '" columnType="' + item.ColumnType + '" checked>';
+                                }
+                                else {
+                                    chk = '<input type="checkbox" name="headers" lay-skin="primary" lay-filter="headers" value="' + item.ColumnName + '" title="' + item.Description + '" columnType="' + item.ColumnType + '">';
+                                }
+                                $('#headers').append($(chk));
+                            }
+                        }
+                        form.render();
+                    }
+                    else {
+                        //layer.msg(slt.message || '操作失败，请重试。');
+                    }
+                }
+            });
+        }
+
+        // 获取表头数据源数据
+        $.ajax({
+        url: "/TableDesigner/TableDesign/GetFormTableList/",    //后台数据请求地址
+            type: "get",
+            data: { page: 1, limit: 500 },
+            async: false,
+            success: function (slt) {
+                if (slt) {
+                    var data = JSON.parse(slt);
+                    var forms = data.data;
+                    for (var i = 0; i < forms.length; i++) {
+                        var item = forms[i];
+                        if (item.TableName == '@Model.DataSource') {
+                            var option = '<option value="' + item.TableName + '" selected>' + item.FormName + '</option>';
+                        }
+                        else {
+                            var option = '<option value="' + item.TableName + '">' + item.FormName + '</option>';
+                        }
+                        $('#dataSource').append($(option));
+                    }
+                    form.render('select');
+                    if ('@Model.DataSource' != '') {
+                        getTableColumns('@Model.DataSource');
+                    }
+                }
+                else {
+                    //layer.msg(slt.message || '操作失败，请重试。');
+                }
+            }
+        });
+
+        form.on('select(headSelected)', function (data) {
+            getTableColumns(data.value);
+        })
+
+        form.on('checkbox(headers)', function (data) {
+            var elem = data.elem; // 获得 checkbox 原始 DOM 对象
+            var checked = elem.checked; // 获得 checkbox 选中状态
+            var value = elem.value; // 获得 checkbox 值
+            var othis = data.othis; // 获得 checkbox 元素被替换后的 jQuery 对象
+
+            if (elem.checked) {
+                headers.push({ TableColumn: elem.value, ColumnName: $(data.elem).attr('title'), Width: 0, Orderby: 0, SearchType: 0, Formula: 0, FormulaValue: '', ColumnType: $(data.elem).attr('columnType') });
+            }
+            else {
+                var index = -1;
+                for (let i = 0; i < headers.length; i++) {
+                    var header = headers[i];
+                    if (header.TableColumn == elem.value) {
+                        index = i;
+                        break;
+                    }
+                }
+                headers.splice(index, 1);
+            }
+            renderAttributes();
+            renderTable();
+        });
+
+        var sortable = new Sortable(document.getElementById('attributes'), {
+            animation: 150,
+            ghostClass: 'blue-background-class',
+            onUpdate: function (evt) {
+                var temp = headers[evt.newIndex];
+                headers[evt.newIndex] = headers[evt.oldIndex];
+                headers[evt.oldIndex] = temp;
+                renderTable();
+            },
+        });
+
+        // 渲染表头属性
+        var renderAttributes = function () {
+            var div = $('#attributes');
+            div.html('');
+            for (let index = 0; index < headers.length; index++) {
+                var header = headers[index];
+                var content = '<div class="lui_dataview_classic_row clearfloat"><div class="lui_dataview_classic_textArea clearfloat">';
+                content += '<input type="hidden" class="table-column" value="' + header.TableColumn + '" />';
+                content += '<div class="lui_dataview_classic_div"><label class="layui-form-label" style="width:60px;padding:9px 5px">' + header.ColumnName + '</label></div>';
+                content += '<div class="lui_dataview_classic_div"><input type="text" name="headWidth" id="headWidth' + index + '" value="' + header.Width + '" class="layui-input" data-width="50" /></div>';
+                content += '<div class="lui_dataview_classic_div" style="width:95px"><select lay-filter="componentSelected" data-field="orderby" class="lui_dataview_classic_select">';
+                var selected = header.Orderby == 0 ? 'selected' : '';
+                content += '<option value="0"' + selected + '>排序方式</option>';
+                selected = header.Orderby == 1 ? 'selected' : '';
+                content += '<option value="1"' + selected + '>升序</option>';
+                selected = header.Orderby == 2 ? 'selected' : '';
+                content += '<option value="2"' + selected + '>降序</option>';
+                content += '</select></div>';
+                content += '<div class="lui_dataview_classic_div" style="width:95px"><select lay-filter="componentSelected" data-field="search" class="lui_dataview_classic_select">';
+                selected = header.SearchType == 0 ? 'selected' : '';
+                content += '<option value="0"' + selected + '>搜索条件</option>';
+                selected = header.SearchType == 1 ? 'selected' : '';
+                content += '<option value="1"' + selected + '>等于</option>';
+                selected = header.SearchType == 2 ? 'selected' : '';
+                content += '<option value="2"' + selected + '>模糊查询</option>';
+                selected = header.SearchType == 3 ? 'selected' : '';
+                content += '<option value="3"' + selected + '>介于</option>';
+                content += '</select></div>';
+                content += '<div class="lui_dataview_classic_div" style="width:95px"><select lay-filter="componentSelected" data-field="formula" class="lui_dataview_classic_select">';
+                selected = header.Formula == 0 ? 'selected' : '';
+                content += '<option value="0"' + selected + '>计算公式</option>';
+                /*selected = header.Formula == 1 ? 'selected' : '';
+                content += '<option value="1"' + selected + '>加</option>';
+                selected = header.Formula == 2 ? 'selected' : '';
+                content += '<option value="2"' + selected + '>减</option>';
+                selected = header.Formula == 3 ? 'selected' : '';
+                content += '<option value="3"' + selected + '>乘</option>';
+                selected = header.Formula == 4 ? 'selected' : '';
+                content += '<option value="4"' + selected + '>除</option>';*/
+                selected = header.Formula == 5 ? 'selected' : '';
+                content += '<option value="5"' + selected + '>拼接</option>';
+                content += '</select></div>';
+                var formulaValue = header.FormulaValue ? header.FormulaValue : '';
+                content += '<div class="lui_dataview_classic_div"><input type="text" name="formulaValue" value="' + formulaValue + '" class="layui-input formulaValue" style="width:60px;" placeholder="公式值" /></div>';
+                content += '</div></div>';
+                div.append($(content));
+                numberInput.init("#headWidth" + index, {
+                    event: {
+                        change: function (event, dom, value, tree) {
+                            var tableColumn = dom.parent().parent().parent().find('.table-column').val();
+                            var header = findColumn(tableColumn);
+                            if (!header) return;
+                            header.Width = value;
+                            renderTable();
+                        }
+                    }
+                });
+            }
+            form.on('select(componentSelected)', function (data) {
+                var field = $(data.elem).data('field');
+                var tableColumn = $(data.elem).parent().parent().find('.table-column').val();
+                var header = findColumn(tableColumn);
+                if (!header) return;
+                if (field == 'orderby') {
+                    header.Orderby = data.value;
+                }
+                else if (field == 'search') {
+                    header.SearchType = data.value;
+                }
+                else if (field == 'formula') {
+                    header.Formula = data.value;
+                }
+                renderTable();
+            })
+            $('body').on('keyup', '.formulaValue', function (e) {
+                var tableColumn = $(this).parent().parent().find('.table-column').val();
+                var header = findColumn(tableColumn);
+                header.FormulaValue = $(this).val();
+                renderTable();
+            })
+            form.render();
+        }
+
+        // 查找表头属性
+        var findColumn = function (tableColumn) {
+            var result;
+            for (let index = 0; index < headers.length; index++) {
+                var header = headers[index];
+                if (header.TableColumn == tableColumn) {
+                    result = header;
+                    break;
+                }
+            }
+            return result;
+        }
+
+        var renderTable = function () {
+            var cols = [];
+            $('#search').html('');
+            for (let index = 0; index < headers.length; index++) {
+                var header = headers[index];
+                var isSort = header.Orderby == 0 ? false : true;
+                var col;
+                if (header.Width == 0) {
+                    col = { field: header.TableColumn, fixed: 'left', title: header.ColumnName, sort: isSort };
+                }
+                else {
+                    col = { field: header.TableColumn, fixed: 'left', width: header.Width, title: header.ColumnName, sort: isSort };
+                }
+                cols.push(col);
+                if (header.SearchType == 1) {
+                    var condition = '<div class="layui-inline" style="margin-right:10px"><input type="text" name="' + header.TableColumn + '" placeholder="请填写' + header.ColumnName + '" class="layui-input" /></div>';
+                    $('#search').append($(condition));
+                }
+                else if (header.SearchType == 2) {
+                    var condition = '<div class="layui-inline" style="margin-right:10px"><input type="text" name= "' + header.TableColumn + '" placeholder="请填写' + header.ColumnName + '" class="layui-input" /></div>';
+                    $('#search').append($(condition));
+                }
+                else if (header.SearchType == 3) {
+                    if (header.ColumnType == 'datetime') {
+                        var condition = '<div class="layui-inline" style="margin-right:10px" id="dateRange"><div class="layui-inline">';
+                        condition += '<input type="text" autocomplete="off" name="' + header.TableColumn + '_begin" id="' + header.TableColumn + '_begin" placeholder="' + header.ColumnName + '-起" class="layui-input" style="height:30px;width:110px"></div>';
+                        condition += '<div class="layui-inline">-</div><div class="layui-inline">';
+                        condition += '<input type="text" autocomplete="off" name="' + header.TableColumn + '_end" id="' + header.TableColumn + '_end" placeholder="' + header.ColumnName + '-止" class="layui-input" style="height:30px;width:110px"></div></div>';
+                        $('#search').append($(condition));
+                        laydate.render({
+                            elem: '#dateRange',
+                            type: 'datetime',
+                            range: ['#' + header.TableColumn + '_begin', '#' + header.TableColumn + '_end']
+                        });
+                    }
+                    else {
+                        var condition = '<div class="layui-inline" style="margin-right:10px" id="dateRange"><div class="layui-inline">';
+                        condition += '<input type="text" autocomplete="off" name="' + header.TableColumn + '_begin" placeholder="' + header.ColumnName + '-起" class="layui-input" style="height:30px;width:110px"></div>';
+                        condition += '<div class="layui-inline">-</div><div class="layui-inline">';
+                        condition += '<input type="text" autocomplete="off" name="' + header.TableColumn + '_end" placeholder="' + header.ColumnName + '-止" class="layui-input" style="height:30px;width:110px"></div></div>';
+                        $('#search').append($(condition));
+                    }
+                }
+                form.render();
+            }
+            table.render({
+                elem: '#tb',
+                url: '/TableDesigner/TableDesign/GetTablePreview/',
+                cellMinWidth: 80,
+                defaultToolbar: [],
+                cols: [cols]
+                , page: true
+            });
+        }
+
+        // 初始化
+        renderAttributes();
+        renderTable();
+
+        $('body').on('click', '.layui-btn-commit', function (e) {
+            var isValid = form.validate('#tableName');
+            if (!isValid) {
+                layer.msg("请填写正确的列表名称");
+                return;
+            }
+            isValid = form.validate('#dataSource');
+            if (!isValid) {
+                layer.msg("请选择一个表头数据源");
+                return;
+            }
+            if (headers.length == 0 ) {
+                layer.msg("请至少选择一个表头");
+                return;
+            }
+            var tableName = $("#tableName").val();
+            var dataSource = $("#dataSource").val();
+            var data = JSON.stringify(headers);
+            $.ajax({
+                type: 'post',
+                url: '/tabledesigner/tabledesign/Save',
+                data: { "id": $("#id").val(), "tableName": tableName, "dataSource": dataSource, "data": data },
+                success: function (result) {
+                    if (result && result.success) {
+                        location.href = '/tabledesigner/tabledesign/list';
+                    }
+                    else {
+                        layer.msg("操作失败，请重试");
+                    }
+                }
+            });
+        })
+    })
+</script>

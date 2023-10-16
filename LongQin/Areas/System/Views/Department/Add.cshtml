@@ -1,0 +1,158 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@model LongQin.Models.Department
+
+@{
+    ViewBag.Title = Model.DepartmentId == 0 ? "添加部门" : "编辑部门";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/System/Department/Index">部门管理</a>
+        <a><cite>@ViewBag.Title</cite></a>
+    </span>
+</blockquote>
+<form class="layui-form" id="mainForm" method="post" action="/System/Department/Set" lay-filter="mainform">
+    @Html.HiddenFor(m => m.DepartmentId)
+    @if (ViewBag.OrganizationId == 0)
+    {
+        <div class="layui-form-item">
+            <label class="layui-form-label">所属公司</label>
+            <div class="layui-input-block">
+                <select name="OrganizationId" id="OrganizationId" autocomplete="off" lay-search="">
+                </select>
+            </div>
+        </div>
+    }
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span style="color:red">*</span>部门名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="DepartmentName" value="@Model.DepartmentName" lay-verify="required|max" lay-reqtext="请填写部门名称" lay-max="25" lay-pretext="部门名称" placeholder="请填写部门名称" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">上级部门</label>
+        <div class="layui-input-block">
+            <input type="text" name="ParentId" value="@Model.ParentId" id="ParentId" lay-filter="ParentId" class="layui-input" />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">部门简介</label>
+        <div class="layui-input-block">
+            <input type="text" name="Description" value="@Model.Description" lay-verify="max" lay-max="50" lay-pretext="部门简介" placeholder="请填写部门简介" autocomplete="off" class="layui-input" />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button type="submit" class="layui-btn" lay-submit="" lay-filter="submitBtn">立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+</form>
+
+@section Bottom{
+    <script>
+        layui.use(['form', 'treeSelect', 'tree'], function () {
+            var form = layui.form
+            , $ = layui.jquery, layer = layui.layer;
+            var tree = layui.tree;
+            var treeSelect = layui.treeSelect;
+
+            //自定义验证规则
+            form.verify({
+                max: function (value, item) {
+                    var maxLen = item.getAttribute('lay-max');
+                    var pretext = item.getAttribute('lay-pretext');
+                    if (value.length > maxLen) {
+                        return pretext + '不能大于' + maxLen + '个字符的长度';
+                    }
+                }
+            });
+
+            //监听提交
+            form.on('submit(submitBtn)', function (data) {
+                $("#mainForm").ajaxSubmit({
+                    success: function (slt) {
+                        if (slt && slt.success) {
+                            location.href = '@Url.Action("index", "department", new { area="system"})';
+                        }
+                        else {
+                            layui.msg(slt.message || '操作失败，请重试。');
+                        }
+                    }
+                });
+                return false;
+            });
+
+            //上级部门
+            treeSelect.render({
+                // 选择器
+                elem: '#ParentId',
+                // 异步获取下拉树需要显示的数据
+                data: '@Url.Action("GetDepartmentTree", "Department", new { area = "System" })' + '?id=' + $("#DepartmentId").val(),
+                // 异步加载方式：get/post，默认get
+                type: 'post',
+                // 占位符
+                placeholder: '请选择上级部门',
+                // 是否开启搜索功能：true/false，默认false
+                search: true,
+                // 一些可定制的样式
+                style: {
+                    folder: {
+                        enable: true
+                    },
+                    line: {
+                        enable: true
+                    }
+                },
+                // 点击节点回调
+                click: function (d) {
+                    form.val('mainform', {
+                        "ParentId": d.current.id
+                    });
+                },
+                // 加载完成后的回调函数
+                success: function (d) {
+                    //console.log(d);
+                    // 选中节点，根据id筛选，一般修改时会有默认选中状态，可以在这里设置
+                    if ($("#ParentId").val() != '0') {
+                        treeSelect.checkNode('ParentId', $("#ParentId").val());
+                    }
+                    //console.log($('#tree').val());
+                    // 获取zTree对象，可以调用zTree方法
+                    //var treeObj = treeSelect.zTree('tree');
+                    // console.log(treeObj);
+                    // 刷新树结构
+                    //treeSelect.refresh('tree');
+                }
+            });
+
+            $.ajax({
+                url: '@Url.Action("GetAllOrganization", "Organization", new { area = "System" })',
+                type: "get",
+                success: function (b) {
+                    var data = eval('(' + b + ')');
+                    if (data.code === 0) {
+                        var opt = '';
+                        //获取返回的数据
+                        var value = data.data;
+                        //循环遍历
+                        for (var i in value) {
+                            if (value[i].OrganizationId == @Model.OrganizationId) {
+                                opt += '<option value = "' + value[i].OrganizationId + '" selected>' + value[i].OrganizationName + '</option>'
+                            }
+                            else {
+                                opt += '<option value = "' + value[i].OrganizationId + '">' + value[i].OrganizationName + '</option>'
+                            }
+                        }
+                        $("#OrganizationId").html(opt);
+                        form.render('select');//需要渲染一下
+
+                    } 
+                }
+            });
+        });
+
+    </script>
+}
+

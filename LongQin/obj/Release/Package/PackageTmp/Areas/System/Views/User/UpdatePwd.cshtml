@@ -1,0 +1,104 @@
+﻿@{
+    ViewBag.Title = "修改密码";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/System/User/UpdatePwd">修改密码</a>
+    </span>
+</blockquote>
+<form class="layui-form" id="mainForm" lay-filter="mainform">
+    <input type="hidden" name="userId" value="@ViewBag.Id" />
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span style="color:red">*</span>旧密码</label>
+        <div class="layui-input-block">
+            <input type="password" name="oldPwd" id="oldPwd" lay-verify="required|max" lay-reqtext="请填写旧密码" lay-max="25" lay-pretext="旧密码" placeholder="请填写旧密码" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span style="color:red">*</span>新密码</label>
+        <div class="layui-input-block">
+            <input type="password" name="newPwd" id="newPwd" lay-verify="required|max|min" lay-reqtext="请填写新密码" lay-max="25" lay-min="8" lay-pretext="新密码" placeholder="请填写新密码" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span style="color:red">*</span>确认密码</label>
+        <div class="layui-input-block">
+            <input type="password" name="confirmPwd" id="confirmPwd" lay-verify="required|max|issame|min" lay-reqtext="请填写确认密码" lay-max="25" lay-min="8" lay-pretext="确认密码" placeholder="请填写确认密码" autocomplete="off" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button type="submit" class="layui-btn" lay-submit="" lay-filter="submitBtn">立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+</form>
+
+@section Bottom{
+    <script>
+        layui.use(['form'], function () {
+            var form = layui.form
+                , $ = layui.jquery, layer = layui.layer;
+
+            //自定义验证规则
+            form.verify({
+                max: function (value, item) {
+                    var maxLen = item.getAttribute('lay-max');
+                    var pretext = item.getAttribute('lay-pretext');
+                    if (value.length > maxLen) {
+                        return pretext + '不能大于' + maxLen + '个字符的长度';
+                    }
+                },
+                min: function (value, item) {
+                    var minLen = item.getAttribute('lay-min');
+                    var pretext = item.getAttribute('lay-pretext');
+                    if (value.length < minLen) {
+                        return pretext + '至少' + minLen + '位';
+                    }
+                },
+                issame: function (value, item) {
+                    var newPwd = $("#newPwd").val();
+                    if (newPwd != value) {
+                        return '两次输入密码不一致';
+                    }
+                },
+            });
+
+            //监听提交
+            form.on('submit(submitBtn)', function (data) {
+                var oldPwd = $("#oldPwd").val();
+                var newPwd = $("#newPwd").val();
+                $.ajax({
+                    url: "@Url.Action("UpdatePassword", "User", new { area = "System" })",    //后台数据请求地址
+                    type: "post",
+                    data: { userId: "@ViewBag.id", oldPwd: oldPwd, newPwd: newPwd },
+                    async:false,
+                    success: function (slt) {
+                        if (slt && slt.success) {
+                            layer.msg('修改成功,3秒后请重新登录');
+                            setTimeout(function () {
+                                layer.msg('2');
+                            }, 1000);
+                            setTimeout(function () {
+                                layer.msg('1');
+                            }, 2000);
+                            setTimeout(function () {
+                                location.href = '@Url.Action("login", "account", new { area = "" })';
+                            }, 3000);
+                        }
+                        else {
+                            layer.msg(slt.message || '操作失败，请重试');
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}
+
+
+
+

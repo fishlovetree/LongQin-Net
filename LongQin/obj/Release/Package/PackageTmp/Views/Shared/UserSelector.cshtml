@@ -1,0 +1,172 @@
+﻿<div class="layui-fluid">
+    <form class="layui-form layui-card">
+        <div class="layui-card-body">
+            <div class="layui-row layui-col-space10">
+                <div class="layui-col-md9">
+                    <div class="layui-inline">
+                        <div class="layui-inline">
+                            <input type="text" name="department" id="department" lay-filter="department" class="layui-input" />
+                        </div>
+                        <div class="layui-inline">
+                            <input type="text" name="nickName" id="nickName" lay-filter="nickName" placeholder="请输入用户名" class="layui-input" />
+                        </div>
+                    </div>
+                    <button type="button" class="layui-btn layui-btn-primary layui-btn-sm search_btn" lay-event="search" style="padding:0px 3px 0px 5px">
+                        <i class="layui-icon">&#xe615;</i>
+                    </button>
+                    <table class="layui-hide" id="tb" lay-filter="tb"></table>
+                </div>
+                <div class="layui-col-md3" style="padding-top: 0;">
+                    <div class="layui-inline">
+                        <div class="layui-inline">
+                            已选员工列表
+                        </div>
+                    </div>
+                    <ul class="layui-menu" id="selectedUser"></ul>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script type="text/html" id="toolbar">
+    <div class="layui-inline" id="dateRange">
+        <div class="layui-inline">
+            部门
+        </div>
+        <div class="layui-inline">
+            <input type="text" name="department" id="department" lay-filter="department" class="layui-input" />
+        </div>
+    </div>
+    <button type="button" class="layui-btn layui-btn-primary layui-btn-sm search_btn" lay-event="search" style="padding:0px 3px 0px 5px">
+        <i class="layui-icon">&#xe615;</i>
+    </button>
+</script>
+
+<script>
+    layui.use(['form', 'jquery', 'treeSelect', 'table'], function () {
+        var form = layui.form;
+        var $ = layui.jquery;
+        var treeSelect = layui.treeSelect;
+        var table = layui.table;
+
+        // 加载部门树
+        treeSelect.render({
+            // 选择器
+            elem: '#department',
+            // 异步获取下拉树需要显示的数据
+            data: '@Url.Action("GetDepartmentTree", "Department", new { area = "System" })' + '?id=0',
+            // 异步加载方式：get/post，默认get
+            type: 'post',
+            // 占位符
+            placeholder: '请选择部门',
+            // 是否开启搜索功能：true/false，默认false
+            search: true,
+            // 一些可定制的样式
+            style: {
+                folder: {
+                    enable: true
+                },
+                line: {
+                    enable: true
+                }
+            },
+            // 点击节点回调
+            click: function (d) {
+                $("#department").val(d.current.id);
+            },
+            // 加载完成后的回调函数
+            success: function (d) {
+
+            }
+        });
+
+        table.render({
+            elem: '#tb',
+            url: '/System/User/GetUserList/',
+            cellMinWidth: 80,
+            height: 240,
+            //toolbar: '#toolbar', //开启头部工具栏，并为其绑定左侧模板
+            defaultToolbar: [],
+            cols: [[
+                { type: 'checkbox', fixed: 'left' },
+                { field: 'UserId', width: 80, title: 'ID', sort: true },
+                { field: 'DepartmentName', width: 120, title: '所属部门' },
+                { field: 'UserName', width: 120, title: '用户名' },
+                { field: 'NickName', width: 120, title: '昵称' }
+            ]]
+            , page: true
+        });
+
+        $(".search_btn").on("click", function () {
+            var departmentId = $('#department').val();
+            var nickName = $('#nickName').val();
+            table.reload('tb', {
+                where: { //设定异步数据接口的额外参数，任意设
+                    departmentId: departmentId,
+                    nickName: nickName
+                }
+                , page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+            })
+        });
+
+        //头工具栏事件
+        table.on('toolbar(tb)', function (obj) {
+            switch (obj.event) {
+                case 'search':
+                    var departmentId = $('#department').val();
+                    table.reload('tb', {
+                        where: { //设定异步数据接口的额外参数，任意设
+                            departmentId: departmentId
+                        }
+                        , page: {
+                            curr: 1 //重新从第 1 页开始
+                        }
+                    })
+                    break;
+            };
+        });
+
+        // 复选框事件
+        table.on('checkbox(tb)', function (obj) {
+            var tableStatus = table.checkStatus('tb');
+            console.log(tableStatus) // 选中行的数据
+            console.log(tableStatus.data.length) // 选中行数量，可作为是否有选中行的条件
+            console.log(tableStatus.isAll) // 表格是否全选
+            $("#selectedUser>li").remove();
+            for (var i = 0; i < tableStatus.data.length; i++) {
+                var data = tableStatus.data[i];
+                $("#selectedUser").append('<li data-id = ' + data.UserId + '>' + data.NickName + '<i class="layui-icon layui-icon-close" style="float: right" onclick="removeSelected($(this).parent().remove())"></i></li> ')
+            }
+        });
+    })
+
+    function removeSelected(that) {
+       var userId = $(that).attr('data-id');
+        $(that).parent().remove();
+        setTableUnChecked('tb', 'UserId', [userId]);
+    }
+
+    /**
+     * 设置表格取消选中
+     */
+    function setTableUnChecked(tableName, field, values) {
+        // 设置缓存选中
+        var thisData = layui.table.cache[tableName] || [];//tableName 表名
+        thisData.forEach(function (item) {
+            item.LAY_CHECKED = layui.$('#' + tableName).next('.layui-table-view').find('tr[data-index="' + item.LAY_TABLE_INDEX + '"]')
+                .find(':checkbox[name="layTableCheckbox"],:radio[lay-type="layTableRadio"]').prop('checked');
+            if (values.includes(item[field].toString())) {
+                item.LAY_CHECKED = false;
+            }
+            layui.$('#' + tableName).next('.layui-table-view').find('tr[data-index="' + item.LAY_TABLE_INDEX + '"]')
+                .find(':checkbox[name="layTableCheckbox"],:radio[lay-type="layTableRadio"]').prop('checked', item.LAY_CHECKED);
+        });
+        // 全选按钮
+        layui.$('#' + tableName).next('.layui-table-view')
+            .find(':checkbox[name="layTableCheckbox"][lay-filter="layTableAllChoose"]').prop('checked', thisData.every(d=>d.LAY_CHECKED));
+        layui.form.render();
+    }
+</script>

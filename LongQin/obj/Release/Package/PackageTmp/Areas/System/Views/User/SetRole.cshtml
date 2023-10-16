@@ -1,0 +1,86 @@
+﻿@{
+    ViewBag.Title = "设置角色";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/System/User/Index">用户管理</a>
+        <a><cite>@ViewBag.Title</cite></a>
+    </span>
+</blockquote>
+<form class="layui-form" id="mainForm" lay-filter="mainform">
+    <div class="layui-form-item" id="roles">
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit="" lay-filter="submitBtn">立即提交</button>
+        </div>
+    </div>
+</form>
+
+@section Bottom{
+    <script>
+        layui.use(['form'], function () {
+            var form = layui.form
+            , $ = layui.jquery, layer = layui.layer;
+
+            $.ajax({
+                url: "@Url.Action("GetRoleList", "Role", new { area = "System" })",
+                method: 'get',
+                dataType: 'JSON',
+                success: function (data) {
+                    if (data && data.data) {
+                        var roleids = "@ViewBag.roleIds";
+                        var roleArr = [];
+                        if (roleids != "") {
+                            roleArr = roleids.split(',');
+                        }
+                        var html = "";
+                        for (var i = 0; i < data.data.length; i++) {
+                            if (roleArr.indexOf('' + data.data[i].RoleId) >= 0) {
+                                html += "<input type=\"checkbox\" checked name=\"roles\" value=\"" + data.data[i].RoleId + "\" title=\"" + data.data[i].RoleName + "\">";
+                            }
+                            else {
+                                html += "<input type=\"checkbox\" name=\"roles\" value=\"" + data.data[i].RoleId + "\" title=\"" + data.data[i].RoleName + "\">";
+                            }
+                        }
+                        $("#roles").append(html);
+                        form.render();//重新渲染
+                    }
+                }
+            })
+
+            //监听提交
+            form.on('submit(submitBtn)', function (data) {
+                var arr = [];
+                $('#roles').find(':checkbox:checked').each((i, x) => {
+                    arr.push($(x).val());
+                });
+                if (arr.length == 0) {
+                    layer.msg('请至少选择一个角色');
+                    return false;
+                }
+                $.ajax({
+                    url: "@Url.Action("SetRole", "User", new { area = "System" })",    //后台数据请求地址
+                    type: "post",
+                    data: { userId: "@ViewBag.userId", roleIds: arr.join() },
+                    async:false,
+                    success: function (slt) {
+                        if (slt && slt.success) {
+                            location.href = '@Url.Action("index", "user", new { area="system"})';
+                        }
+                        else {
+                            layer.msg(slt.message || '操作失败，请重试。');
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}
+
+
+
+

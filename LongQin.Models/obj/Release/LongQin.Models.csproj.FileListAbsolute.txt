@@ -1,0 +1,6 @@
+C:\Users\pc\source\repos\longqin\LongQin.Models\bin\Release\LongQin.Models.dll
+C:\Users\pc\source\repos\longqin\LongQin.Models\bin\Release\LongQin.Models.pdb
+C:\Users\pc\source\repos\longqin\LongQin.Models\obj\Release\LongQin.Models.csproj.AssemblyReference.cache
+C:\Users\pc\source\repos\longqin\LongQin.Models\obj\Release\LongQin.Models.csproj.CoreCompileInputs.cache
+C:\Users\pc\source\repos\longqin\LongQin.Models\obj\Release\LongQin.Models.dll
+C:\Users\pc\source\repos\longqin\LongQin.Models\obj\Release\LongQin.Models.pdb

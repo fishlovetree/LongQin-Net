@@ -1,0 +1,220 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@model LongQin.Models.FormDesigner
+@{
+    ViewBag.Title = "表单设计器";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/FormDesigner/FormDesign/Index">表单设计器</a>
+    </span>
+</blockquote>
+<div class="layui-fluid">
+    <form class="layui-form layui-card">
+        <input type="hidden" id="id" name="Id" value="@Model.Id">
+        <input type="hidden" id="jsonData" name="JsonData" value="@Model.JsonData">
+        @*<div class="layui-card-header">表单设计</div>*@
+        <div class="layui-card-body">
+            <div class="layui-row layui-col-space30">
+                <div class="layui-col-md2" style="padding-top: 0;">
+                    <div class="layui-tab layui-tab-brief">
+                        <ul class="layui-tab-title">
+                            <li class="layui-this">表单组件</li>
+                            <!--<li>表单模板</li>-->
+                        </ul>
+                        <div class="layui-tab-content" id="layui-form-attribute">
+                            <div class="layui-tab-item layui-form layui-show">
+                                <div class="component">
+                                    <div class="head">表单组件</div>
+                                    <div class="component-group" id="sort_1">
+                                        <ol data-tag="input"><div class="icon"><i class="layui-icon layui-icon-layer"></i></div><div class="name">单行输入</div></ol>
+                                        <ol data-tag="textarea"><div class="icon"><i class="layui-icon layui-icon-align-left"></i></div><div class="name">多行输入</div></ol>
+                                        <ol data-tag="radio"><div class="icon"><i class="layui-icon layui-icon-radio"></i></div><div class="name">单选框</div></ol>
+                                        <ol data-tag="checkbox"><div class="icon"><i class="layui-icon layui-icon-table"></i></div><div class="name">多选框</div></ol>
+                                        <ol data-tag="select"><div class="icon"><i class="layui-icon layui-icon-print"></i></div><div class="name">下拉框</div></ol>
+                                        <ol data-tag="date"><div class="icon"><i class="layui-icon layui-icon-time"></i></div><div class="name">日期组件</div></ol>
+                                        <ol data-tag="colorpicker"><div class="icon"><i class="layui-icon layui-icon-theme"></i></div><div class="name">颜色选择器</div></ol>
+                                        <ol data-tag="slider"><div class="icon"><i class="layui-icon layui-icon-slider"></i></div><div class="name">滑块</div></ol>
+                                        <ol data-tag="rate"><div class="icon"><i class="layui-icon layui-icon-rate-solid"></i></div><div class="name">评分</div></ol>
+                                        <ol data-tag="switch"><div class="icon"><i class="layui-icon layui-icon-switch"><k></k></i></div><div class="name">开关</div></ol>
+                                        <ol data-tag="cascader"><div class="icon"><i class="layui-icon layui-icon-cols"></i></div><div class="name">级联选择器</div></ol>
+                                        <ol data-tag="editor"><div class="icon"><i class="layui-icon layui-icon-form"></i></div><div class="name">富文本</div></ol>
+                                        <ol data-tag="upload"><div class="icon"><i class="layui-icon layui-icon-upload"></i></div><div class="name">文件上传</div></ol>
+                                        <ol data-tag="tags"><div class="icon"><i class="layui-icon fa-instagram"></i></div><div class="name">标签选择器</div></ol>
+                                        <!--<ol data-tag="json"><div class="icon"><i class="layui-icon fa-bars"></i></div><div class="name">JSON组件</div></ol>-->
+                                    </div>
+                                </div>
+
+                                <div class="component">
+                                    <div class="head">辅助组件</div>
+                                    <div class="component-group" id="sort_2">
+                                        <ol data-tag="tips"><div class="icon"><i class="layui-icon layui-icon-tips"></i></div><div class="name">提示</div></ol>
+                                        <!--<ol data-tag="button"><div class="icon"><i class="layui-icon layui-icon-layer"></i></div><div class="name">按钮</div></ol>-->
+                                        <ol data-tag="note"><div class="icon"><i class="layui-icon layui-icon-note"></i></div><div class="name">便签</div></ol>
+                                        <ol data-tag="subtraction"><div class="icon"><i class="layui-icon layui-icon-subtraction"></i></div><div class="name">分割线</div></ol>
+                                    </div>
+                                </div>
+                                <div class="component">
+                                    <div class="head">布局组件</div>
+                                    <div class="component-group" id="sort_3">
+                                        <!--<ol data-tag="tab"><div class="icon"><i class="layui-icon layui-icon-tabs smallfont"></i></div><div class="name">TAB选项卡</div></ol>
+                                        <ol data-tag="grid"><div class="icon"><i class="layui-icon layui-icon-layouts"></i></div><div class="name">栅格</div></ol>-->
+                                        <ol data-tag="space"><div class="icon"><i class="layui-icon layui-icon-more"></i></div><div class="name">间距</div></ol>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- // 加载远程表单模板 -->
+                            <div id="layui-form-template" class="layui-tab-item">
+                                <div id="item-list" class="item-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-col-md8">
+                    <div class="layui-card-header">
+                        <div class="fr">
+                            <button type="button" class="layui-btn layui-btn-sm layui-btn-export"><i class="layui-icon layui-icon-export"></i>导出</button>
+                            <button type="button" class="layui-btn layui-btn-sm layui-btn-import"><i class="layui-icon layui-icon-layer"></i>导入</button>
+                            <button type="button" class="layui-btn layui-btn-sm layui-btn-component"> <i class="layui-icon layui-icon-component"></i> 预览</button>
+                            <button type="button" class="layui-btn layui-btn-sm layui-btn-danger layui-form-clear"><i class="layui-icon layui-icon-delete"></i>清空</button>
+                        </div>
+                    </div>
+                    <!-- // 表单设计区域 -->
+                    <div id="formBuilder" style="width: 100%"></div>
+                    <!-- // 表单隐藏域 -->
+                    <textarea id="formdesign" name="formdesign" hidden></textarea>
+                </div>
+                <div class="layui-col-md2" style="padding-top: 0;">
+                    <div class="layui-tab layui-tab-brief">
+                        <ul class="layui-tab-title">
+                            <li class="layui-this">组件属性</ol>
+                            <li>表单属性</ol>
+                        </ul>
+
+                        <div class="layui-tab-content" id="layui-form-attribute">
+                            <div class="layui-tab-item layui-form layui-show" id="Propertie" lay-filter="Propertie"></div>
+                            <div class="layui-tab-item">
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label"><font color="red">*</font>表单ID</label>
+                                    <div class="layui-input-inline">
+                                        <input type="text" id="formid" name="formid" class="layui-input" value="@(Model.TableName ?? "")" lay-verify="required|max|tablename" lay-reqtext="请填写表单ID" lay-max="25" lay-pretext="表单ID" placeholder="请填写表单ID">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label"><font color="red">*</font>表单名</label>
+                                    <div class="layui-input-inline">
+                                        <input type="text" id="formname" name="formname" class="layui-input" value="@(Model.FormName ?? "")" lay-verify="required|max" lay-reqtext="请填写表单名" lay-max="25" lay-pretext="表单名" placeholder="请填写表单名">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">是否审批</label>
+                                    <div class="layui-input-inline">
+                                        <input type="radio" name="isApproval" value="1" title="是" checked="@(Model.IsApproval == 1 ? true : false)" />
+                                        <input type="radio" name="isApproval" value="0" title="否" checked="@(Model.IsApproval == 0 ? true : false)" />
+                                    </div>
+                                </div>
+                                <!--<div class="layui-form-item">
+                                <label class="layui-form-label">表单类型</label>
+                                <div class="layui-input-inline">
+
+                                    <input type="radio" name="formtype" title="内置">
+                                    <input type="radio" name="formtype" title="弹窗" checked="">
+
+                                </div>
+                            </div>
+
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">表单按钮</label>
+                                <div class="layui-input-inline">
+
+                                    <input type="radio" name="postBtn" title="开启" checked="">
+                                    <input type="radio" name="postBtn" title="关闭">
+
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">表单宽高</label>
+                                <div class="layui-input-inline">
+                                    <input type="number" id="formWidth" name="width" style="width: 70px;display: inline-block;" class="layui-input" value="800" placeholder="宽度">
+                                    <em> - </em>
+                                    <input type="number" id="formHeight" name="height" style="width:70px;display: inline-block;" class="layui-input" value="600" placeholder="高度">
+                                </div>
+                            </div>-->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="layui-footer layui-form-footer">
+            <button class="layui-btn layui-btn-commit" lay-filter="submitIframe" type="button" lay-submit>提交</button>
+        </div>
+    </form>
+</div>
+
+<div class="layui-htmlview" style="display: none;">
+    <textarea id="json-code"></textarea>
+    <div class="layui-htmlbtn">
+        <button id="copy-code" class="layui-btn layui-hide">复制代码</button>
+        <button id="import-code" class="layui-btn layui-hide">导入数据</button>
+    </div>
+</div>
+
+<link rel="stylesheet" href="~/Content/formdesigner/module/formDesign/formdesign.css">
+<!-- // 全局加载第三方JS -->
+<script src="~/Content/formdesigner/cascadata.js"></script>
+<script src="~/Content/formdesigner/tinymce/tinymce.min.js"></script>
+<!-- // 加载font-awesome图标 -->
+<link href="~/Content/formdesigner/css/font-awesome.css" rel="stylesheet" type="text/css" />
+<script src="~/Content/formdesigner/Sortable/Sortable.js"></script>
+
+<script>
+    var commitUrl = "@Url.Action("set", "formdesign", new { area = "formdesigner" })";
+</script>
+
+<script>
+    layui.config({
+        version: true,
+        base: '../../Content/formdesigner/module/'
+    }).extend({
+        cascader: 'cascader/cascader',
+        tags: 'tags/tags',
+        formDesign: 'formDesign/formDesign',
+    }).use(['form', 'jquery', 'flow', 'formDesign', 'tags'], function () {
+        var form = layui.form;
+        var $ = layui.jquery;
+        var tags = layui.tags;
+        var formDesign = layui.formDesign;
+
+        //自定义验证规则
+        form.verify({
+            max: function (value, item) {
+                var maxLen = item.getAttribute('lay-max');
+                var pretext = item.getAttribute('lay-pretext');
+                if (value.length > maxLen) {
+                    return pretext + '不能大于' + maxLen + '个字符的长度';
+                }
+            },
+            min: function (value, item) {
+                var minLen = item.getAttribute('lay-min');
+                var pretext = item.getAttribute('lay-pretext');
+                if (value.length < minLen) {
+                    return pretext + '至少' + minLen + '位';
+                }
+            },
+            tablename: [/^\w+$/, '表单ID只能由字母、数字或下划线组成']
+        });
+
+        var c = formDesign.render({
+            elem: '#formBuilder'
+            , eval: '#formdesign'
+        });
+
+        var data = $("#jsonData").val();
+        if (data) {
+            c.edit(data);
+            $('#formid').attr("readonly", "readonly");
+        }
+    })
+</script>

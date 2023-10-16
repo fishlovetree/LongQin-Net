@@ -1,0 +1,88 @@
+﻿<div class="layui-tab" lay-filter="footerTab">
+    <ul class="layui-tab-title">
+        <li class="layui-this" lay-id="11">流程记录</li>
+        <li lay-id="22">流程图</li>
+    </ul>
+    <div class="layui-tab-content">
+        <div class="layui-tab-item layui-show"><table class="layui-hide" id="record" lay-filter="record"></table></div>
+        <div class="layui-tab-item"><div style="width:100%;height:300px;overflow-y:auto;"><div id="flowBuilder" style="width:100%;height:800px"></div></div></div>
+    </div>
+</div>
+
+<link href="~/Content/formdesigner/css/font-awesome.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="@Url.Content("~/Content/flowdesigner/raphael-min.js")"></script>
+<script type="text/javascript" src="@Url.Content("~/Content/flowdesigner/raphael-flow.js")"></script>
+
+<script>
+
+    var workId = "@ViewBag.workId";
+    layui.use(['table', 'form', 'treeSelect'], function () {
+        var form = layui.form;
+        var table = layui.table;
+        var treeSelect = layui.treeSelect;
+
+        table.render({
+            elem: '#record',
+            url: '/Work/WorkFlow/GetWorkSteps/',
+            cellMinWidth: 80,
+            where: { workId: workId },
+            defaultToolbar: [],
+            cols: [[
+                { field: 'StepId', width: 80, title: 'ID', sort: true },
+                { field: 'NodeName', title: '任务' },
+                { field: 'SubmitterName', title: '处理人' },
+                { field: 'SubmitTime', title: '处理时间' },
+                {
+                    fixed: 'Action', title: '动作', width: 80, templet: function (d) {
+                        if (d.Action == 1) {
+                            return '前进';
+                        }
+                        else if (d.Action == 2) {
+                            return '回退';
+                        }
+                        else if (d.Action == 3) {
+                            return '转办';
+                        }
+                    }
+                },
+                { field: 'StayTime', title: '停留时长' }
+            ]]
+          , page: true
+        });
+
+        var tab = layui.element;
+        tab.on('tab(footerTab)', function (data) {
+            if (data.index == 1) {
+                var tableData = table.getData('record');
+                var steps = [];
+                if (tableData && tableData.length > 0) {
+                    for (var i = tableData.length - 1; i >= 0; i--) {
+                        steps.push(tableData[i].NodeId.toString());
+                    }
+                }
+                var v = $("#flowBuilder").width();
+                var e = $("#flowBuilder").height();
+                var pager = new Raphael(document.getElementById("flowBuilder"), v, e);
+                var mflow = $.Flow.createNew(pager, form, treeSelect);
+                var flowId = "@ViewBag.flowId";
+                if (flowId == "0") {
+                    mflow.init();
+                }
+                else {
+                    $.ajax({
+                        url: "/FlowDesigner/FlowDesign/GetFlowJson",    //后台数据请求地址
+                        type: "get",
+                        data: { flowId: flowId },
+                        async: false,
+                        success: function (result) {
+                            if (result) {
+                                var r = { data: eval(result) };
+                                mflow.init(r, steps);
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    })
+</script>

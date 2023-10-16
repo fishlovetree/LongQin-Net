@@ -1,0 +1,25 @@
+﻿@charset "utf-8";
+/* CSS Document */
+
+*{ padding:0; margin:0;}
+body{font-family: "Hiragino Sans GB","Microsoft YaHei","黑体",Helvetica,Arial,Tahoma,sans-serif; font-size:14px; color:#1a1a1a; line-height:1.6em;}
+a,a:hover{ color:#1a1a1a; text-decoration:none; outline:none;}
+a{ -webkit-transition:0.3s all; transition:0.3s all;}
+img{ vertical-align:middle; border:0;}
+ul,li{list-style: none}
+input,button,textarea,select{ background: none; border:0; display:inline-block; outline: none; font-size: 12px; font-family: "Hiragino Sans GB","Microsoft YaHei","黑体",Helvetica,Arial,Tahoma,sans-serif;}
+button,select{ cursor: pointer;}
+.fl{ float: left}
+.fr{ float: right;}
+.hide{ display: none;}
+i,em{ font-style: normal;}
+table{ width: 100%; border-collapse:separate;border-spacing:0;clear:both}
+.glaxfont{ color:#808080}
+.blue{ color:#0000ff;}
+.bluebox{ background:#0000ff; color:#fff}
+.glaxbox{ background:#ebebeb; color:#000;}
+.overflow{ overflow:hidden;}
+.padding30{ padding-bottom:30px;}
+.relative{ position:relative}
+.textcenter{ text-align:center!important;}
+.clearfix{ clear:both; overflow:hidden; height:0; visibility:hidden;}

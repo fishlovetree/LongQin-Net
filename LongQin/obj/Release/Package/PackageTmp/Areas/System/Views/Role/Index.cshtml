@@ -1,0 +1,76 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@{
+    ViewBag.Title = "角色管理";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/System/Role/Index">角色管理</a>
+    </span>
+</blockquote>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" lay-event="create">新建</button>
+    </div>
+</script>
+<table class="layui-hide" id="tb" lay-filter="tb"></table>
+
+<script type="text/html" id="bar">
+    <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="setMenu">设置功能</a>
+    <!--<a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="setUser">设置用户</a>-->
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+<script>
+    layui.use('table', function () {
+        var table = layui.table;
+
+        table.render({
+            elem: '#tb',
+            url: '/System/Role/GetRoleList/',
+            cellMinWidth: 80,
+            toolbar: '#toolbar', //开启头部工具栏，并为其绑定左侧模板
+            defaultToolbar: [],
+            cols: [[
+            { field: 'RoleId', width: 80, title: 'ID', sort: true },
+            { field: 'RoleName', title: '角色' },
+            { field: 'Description', title: '描述' },
+            { fixed: 'right', title: '操作', toolbar: '#bar', width: 300 }
+            ]]
+          , page: true
+        });
+
+        //头工具栏事件
+        table.on('toolbar(tb)', function (obj) {
+            switch (obj.event) {
+                case 'create':
+                    location.href = '@Url.Action("add", "role", new { area="system"})' + '?id=0';
+                    break;
+            };
+        });
+
+        //监听行工具事件
+        table.on('tool(tb)', function (obj) {
+            var data = obj.data;
+            //console.log(obj)
+            if (obj.event === 'del') {
+                layer.confirm('确定要删除吗？', function (index) {
+                    $.post('/System/Role/Delete', { id: data.RoleId }, function (slt) {
+                        if (slt && slt.success) {
+                            obj.del();
+                            layer.close(index);
+                        }
+                        else {
+                            layer.msg(slt.message || '操作失败，请重试');
+                        }
+                    });
+                });
+            } else if (obj.event === 'edit') {
+                location.href = '@Url.Action("add", "role", new { area="system"})' + '?id=' + data.RoleId;
+            } else if (obj.event === 'setMenu') {
+                location.href = '@Url.Action("setMenu", "role", new { area="system"})' + '?id=' + data.RoleId;
+            }
+        });
+    });
+</script>

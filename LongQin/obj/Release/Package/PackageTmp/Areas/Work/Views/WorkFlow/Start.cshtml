@@ -1,0 +1,129 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@{
+    ViewBag.Title = "启动流程";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/FlowDesigner/FlowDesign/List">启动流程("@ViewBag.flowName")</a>
+    </span>
+</blockquote>
+<div class="layui-fluid" id="formContent">
+    <form class="layui-form" id="mainForm" method="post" action="/Work/WorkFlow/Deal"></form>
+</div>
+
+<!-- // 全局加载第三方JS -->
+<script src="~/Content/formdesigner/cascadata.js"></script>
+<script src="~/Content/formdesigner/tinymce/tinymce.min.js"></script>
+<script>
+
+    var flowId = "@ViewBag.flowId";
+    layui.config({
+        version: true,
+        base: '../../Content/formdesigner/module/'
+    }).extend({
+        cascader: 'cascader/cascader',
+        tags: 'tags/tags',
+        formDesign: 'formDesign/formDesign',
+    }).use(['table', 'form', 'formDesign', 'tags'], function () {
+        var form = layui.form;
+        var formDesign = layui.formDesign;
+        var cascader = layui.cascader;
+
+        $.ajax({
+            url: "/Work/WorkFlow/GetFlowBeginNodeForm",    //后台数据请求地址
+            type: "get",
+            data: { flowId: flowId },
+            async: false,
+            success: function (result) {
+                if (result) {
+                    var data = JSON.parse(result);
+                    var jsonData = JSON.parse(data.JsonData);
+
+                    var formId = data.TableName
+                    html = '<input type="hidden" name="flowId" value="' + flowId + '">';
+                    html += '<input type="hidden" id="processId" name="processId" value="0">';
+                    html += '<input type="hidden" name="tableName" value="' + formId + '">';
+                    html += '<input type="hidden" name="isApproval" value="0">';
+                    html += '<input type="hidden" id="isSave" name="isSave" value="' + 1 + '">';
+                    for (let index = 0; index < jsonData.length; index++) {
+                        var element = jsonData[index];
+                        html += formDesign.renderComponentItem[element.tag].render(element);
+                    }
+                    html = html.replace(/<ol[^>]+>/g, '').replace(/<\/ol>/g, '');
+                    html = html.replace(/<div class="layui-component-tools">.*?<\/div>/g, '');
+                    // 获取提交代码
+                    subHtml = html;
+                    subHtml += '<div class="layui-form-item">';
+                    subHtml += '<label class="layui-form-label"></label><button type="submit" class="layui-btn" lay-submit="" lay-filter="submitBtn">立即提交</button>';
+                    subHtml += '<button type="submit" class="layui-btn" lay-submit="" lay-filter="saveBtn">暂存</button>';
+                    subHtml += '<button type="reset" class="layui-btn layui-btn-primary">重置</button>';
+                    subHtml += '</div>';
+                    html = subHtml;
+
+                    var formWidth = $('#formWidth').val();
+                    if (formWidth) {
+                        formWidth += 'px';
+                    } else {
+                        formWidth = '65%';
+                    }
+
+                    var formHeight = $('#formHeight').val();
+                    if (formHeight) {
+                        formHeight += 'px';
+                    } else {
+                        formHeight = '65%';
+                    }
+                    $("#mainForm").html(html);
+                    renderComponent(jsonData);
+                    form.render();
+
+                    //监听提交
+                    form.on('submit(submitBtn)', function (data) {
+                        $("#isSave").val(0);
+                        tinyMCE.triggerSave();
+                        $("#mainForm").ajaxSubmit({
+                            success: function (slt) {
+                                if (slt && slt.success) {
+                                    //重定向到待办工作页面
+                                    location.href = '@Url.Action("Backlog", "WorkFlow", new { area="Work"})';
+                                }
+                                else {
+                                    layer.msg(slt.message || '操作失败，请重试。');
+                                }
+                            }
+                        });
+                        return false;
+                    });
+
+                    //监听保存
+                    form.on('submit(saveBtn)', function (data) {
+                        $("#isSave").val(1);
+                        tinyMCE.triggerSave();
+                        $("#mainForm").ajaxSubmit({
+                            success: function (slt) {
+                                if (slt && slt.success) {
+                                    var processId = slt.data;
+                                    $("#processId").val(processId);
+                                    layer.msg('保存成功。');
+                                }
+                                else {
+                                    layer.msg(slt.message || '保存失败，请重试。');
+                                }
+                            }
+                        });
+                        return false;
+                    });
+                }
+            }
+        });
+
+        function renderComponent(jsonData) {
+            for (let index = 0; index < jsonData.length; index++) {
+                var element = jsonData[index];
+                formDesign.renderComponentExtend(element, index);
+            }
+        }
+
+    })
+</script>

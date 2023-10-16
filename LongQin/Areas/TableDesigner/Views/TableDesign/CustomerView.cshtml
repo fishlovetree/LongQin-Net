@@ -1,0 +1,116 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@model LongQin.Models.TableDesigner
+@{
+    ViewBag.Title = Model.TableName;
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/TableDesigner/TableDesign/CustomerView/@Model.Id">@Model.TableName</a>
+    </span>
+</blockquote>
+<form class="layui-form" id="searchForm" lay-filter="searchForm">
+<div class="layui-inline" id="search"></div>
+<button type="button" class="layui-btn layui-btn-primary layui-btn-sm search_btn" lay-event="search" style="padding:0px 3px 0px 5px">
+    <i class="layui-icon">&#xe615;</i>
+</button>
+<button type="button" class="layui-btn layui-btn-primary layui-btn-sm export_btn" lay-event="export" style="padding:0px 3px 0px 5px">
+    <i class="layui-icon">&#xe67d;</i>
+</button>
+</form>
+<table class="layui-hide" id="tb" lay-filter="tb"></table>
+
+<script>
+    layui.use(['table', 'form', 'laydate'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        var layer = layui.layer;
+        var laydate = layui.laydate;
+
+        // 获取自定义列表表头
+        $.ajax({
+            url: "/TableDesigner/TableDesign/GetTableDesignerColumnsAsync/",    // 后台数据请求地址
+            type: "get",
+            data: { id: "@Model.Id" },
+            async: false,
+            success: function (slt) {
+                if (slt) {
+                    var data = JSON.parse(slt);
+                    var headers = data.data;
+                    var cols = [];
+                    $('#search').html('');
+                    for (let index = 0; index < headers.length; index++) {
+                        var header = headers[index];
+                        var isSort = header.Orderby == 0 ? false : true;
+                        if (header.Width == 0) {
+                            col = { field: header.TableColumn, fixed: 'left', title: header.ColumnName, sort: isSort };
+                        }
+                        else {
+                            col = { field: header.TableColumn, fixed: 'left', width: header.Width, title: header.ColumnName, sort: isSort };
+                        }
+                        cols.push(col);
+                        if (header.SearchType == 1) {
+                            var condition = '<div class="layui-inline" style="margin-right:10px"><input type="text" name="' + header.TableColumn + '" placeholder="请填写' + header.ColumnName + '" class="layui-input" /></div>';
+                            $('#search').append($(condition));
+                        }
+                        else if (header.SearchType == 2) {
+                            var condition = '<div class="layui-inline" style="margin-right:10px"><input type="text" name= "' + header.TableColumn + '" placeholder="请填写' + header.ColumnName + '" class="layui-input" /></div>';
+                            $('#search').append($(condition));
+                        }
+                        else if (header.SearchType == 3) {
+                            if (header.ColumnType == 'datetime') {
+                                var condition = '<div class="layui-inline" style="margin-right:10px" id="dateRange"><div class="layui-inline">';
+                                condition += '<input type="text" autocomplete="off" name="' + header.TableColumn + '_begin" id="' + header.TableColumn + '_begin" placeholder="' + header.ColumnName + '-起" class="layui-input" style="height:30px;width:110px"></div>';
+                                condition += '<div class="layui-inline">-</div><div class="layui-inline">';
+                                condition += '<input type="text" autocomplete="off" name="' + header.TableColumn + '_end" id="' + header.TableColumn + '_end" placeholder="' + header.ColumnName + '-止" class="layui-input" style="height:30px;width:110px"></div></div>';
+                                $('#search').append($(condition));
+                                laydate.render({
+                                    elem: '#dateRange',
+                                    type: 'datetime',
+                                    range: ['#' + header.TableColumn + '_begin', '#' + header.TableColumn + '_end']
+                                });
+                            }
+                            else {
+                                var condition = '<div class="layui-inline" style="margin-right:10px" id="dateRange"><div class="layui-inline">';
+                                condition += '<input type="text" autocomplete="off" name="' + header.TableColumn + '_begin" placeholder="' + header.ColumnName + '-起" class="layui-input" style="height:30px;width:110px"></div>';
+                                condition += '<div class="layui-inline">-</div><div class="layui-inline">';
+                                condition += '<input type="text" autocomplete="off" name="' + header.TableColumn + '_end" placeholder="' + header.ColumnName + '-止" class="layui-input" style="height:30px;width:110px"></div></div>';
+                                $('#search').append($(condition));
+                            }
+                        }
+                        form.render();
+                    }
+                    table.render({
+                        elem: '#tb',
+                        url: '/TableDesigner/TableDesign/GetTableData/',
+                        where: { id: "@Model.Id", dataSource: "@Model.DataSource" },
+                        cellMinWidth: 80,
+                        defaultToolbar: [],
+                        cols: [cols]
+                        , page: true
+                    });
+                    form.render();
+                }
+                else {
+                    //layer.msg(slt.message || '操作失败，请重试。');
+                }
+            }
+        });
+
+        $(".search_btn").on("click", function () {
+            var where = form.val('searchForm');
+            where.id = "@Model.Id";
+            where.dataSource = "@Model.DataSource";
+            table.reload('tb', {
+                where: where
+                , page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+            })
+        });
+
+        $(".export_btn").on("click", function () {
+            layer.msg('作者很懒，有时间再实现');
+        });
+    });
+</script>

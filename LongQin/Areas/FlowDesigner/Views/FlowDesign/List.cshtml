@@ -1,0 +1,91 @@
+﻿@using LongQin.Models
+@using LongQin.Infrastructures
+@{
+    ViewBag.Title = "流程列表";
+}
+<blockquote class="layui-elem-quote">
+    <span class="layui-breadcrumb">
+        <a href="/FlowDesigner/FlowDesign/List">流程列表</a>
+    </span>
+</blockquote>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" lay-event="create">新建</button>
+    </div>
+</script>
+<table class="layui-hide" id="tb" lay-filter="tb"></table>
+<div id="hiddenArea" style="display:none"></div>
+
+<script type="text/html" id="bar">
+    <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="start">启动</a>
+    <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+<script>
+    layui.use(['table'], function () {
+        var table = layui.table;
+
+        table.render({
+            elem: '#tb',
+            url: '/FlowDesigner/FlowDesign/GetFlowList',
+            cellMinWidth: 80,
+            toolbar: '#toolbar', //开启头部工具栏，并为其绑定左侧模板
+            defaultToolbar: [],
+            cols: [[
+            { field: 'FlowId', width: 80, title: 'ID', sort: true },
+            { field: 'FlowName', title: '流程名' },
+            {
+                field: 'FlowSort', title: '流程类别', templet: function (d) {
+                    if (d.FlowSort == 1) {
+                        return "考勤类";
+                    }
+                    else if (d.FlowSort == 2) {
+                        return "行政类";
+                    }
+                    else if (d.FlowSort == 3) {
+                        return "业务类";
+                    }
+                    else {
+                        return "";
+                    }
+                } },
+            { field: 'CreateTime', title: '创建时间' },
+            { fixed: 'right', title: '操作', toolbar: '#bar', width: 200 }
+            ]]
+          , page: true
+        });
+
+        //头工具栏事件
+        table.on('toolbar(tb)', function (obj) {
+            switch (obj.event) {
+                case 'create':
+                    location.href = '@Url.Action("index", "flowdesign", new { area="flowdesigner"})' + '?flowId=0';
+                    break;
+            };
+        });
+
+        //监听行工具事件
+        table.on('tool(tb)', function (obj) {
+            var data = obj.data;
+            //console.log(obj)
+            if (obj.event === 'del') {
+                layer.confirm('确定要删除吗？', function (index) {
+                    $.post('/FlowDesigner/FlowDesign/DeleteFlow', { flowId: data.FlowId }, function (slt) {
+                        if (slt && slt.success) {
+                            obj.del();
+                            layer.close(index);
+                        }
+                        else {
+                            layer.msg(slt.message || '操作失败，请重试');
+                        }
+                    });
+                });
+            } else if (obj.event === 'edit') {
+                location.href = '@Url.Action("index", "flowdesign", new { area="flowdesigner"})' + '?flowId=' + data.FlowId;
+            } else if (obj.event === 'start') {
+                location.href = '@Url.Action("start", "workflow", new { area="work"})' + '?flowId=' + data.FlowId + '&flowName=' + data.FlowName;
+            }
+        });
+    });
+</script>
